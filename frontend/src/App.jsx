@@ -224,7 +224,7 @@ function App() {
 
         // Send move to engine
         const moveStr = toMoveString(sourceSquare, targetSquare, promotionPiece);
-        sendMove(moveStr);
+        sendMove(moveStr, gameCopy.fen());
         return true;
       }
 

@@ -78,12 +78,13 @@ export function useEngineWebSocket() {
     };
   }, [connect]);
 
-  const sendMove = useCallback((moveStr) => {
+  const sendMove = useCallback((moveStr, fenStr) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      const msg = JSON.stringify({ type: 'move', move: moveStr });
+      const msg = JSON.stringify({ type: 'move', move: moveStr, fen: fenStr });
       console.log('[WS] Sending:', msg);
       setIsThinking(true);
       wsRef.current.send(msg);
+      setLastMessage(null);
       return true;
     }
     console.warn('[WS] Cannot send move - not connected');

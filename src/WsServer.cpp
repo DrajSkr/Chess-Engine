@@ -595,6 +595,7 @@ void handle_client(SOCKET client_sock)
         else if (msg_type == "move")
         {
             std::string move_str = json_get_string(payload, "move");
+            std::string fen_str = json_get_string(payload, "fen");
 
             if (move_str.empty())
             {
@@ -604,7 +605,11 @@ void handle_client(SOCKET client_sock)
 
             // Lock engine state for the duration of move + search
             CSLock lock(engine_cs);
-            parse_FEN_string(session_fen); // load client's personal board state
+            if (!fen_str.empty()) {
+                parse_FEN_string(fen_str);
+            } else {
+                parse_FEN_string(session_fen); // load client's personal board state
+            }
             ply = 0; // reset global ply to prevent issues between searches
 
             // 1. Parse and validate the player's move
