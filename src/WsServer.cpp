@@ -805,7 +805,11 @@ int main()
     while (true)
     {
         struct sockaddr_in client_addr;
+#ifdef _WIN32
         int addr_len = sizeof(client_addr);
+#else
+        socklen_t addr_len = sizeof(client_addr);
+#endif
         SOCKET client_sock = accept(server_sock, (struct sockaddr*)&client_addr, &addr_len);
         if (client_sock == INVALID_SOCKET)
         {
