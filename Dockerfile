@@ -14,6 +14,7 @@ COPY . /app
 
 # Build the WebSocket server
 WORKDIR /app/src
+RUN rm -f *.o ws_*.o Domino.exe DominoServer.exe
 RUN make server
 
 # Expose the WebSocket port

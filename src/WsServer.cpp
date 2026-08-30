@@ -448,9 +448,12 @@ void handle_client(SOCKET client_sock)
 
     std::cout << "[WS] Handshake successful." << std::endl;
 
+    std::string session_fen = start_position;
+
     // Send initial game state
     {
         CSLock lock(engine_cs);
+        parse_FEN_string(session_fen);
         std::string fen = export_fen();
         std::string response = json_game_state(fen, 0);
         std::cout << "[WS] Sending initial state: " << response << std::endl;
@@ -473,8 +476,9 @@ void handle_client(SOCKET client_sock)
 
         if (msg_type == "new_game")
         {
+            session_fen = start_position;
             CSLock lock(engine_cs);
-            parse_FEN_string(start_position);
+            parse_FEN_string(session_fen);
             std::string fen = export_fen();
             std::string response = json_game_state(fen, 0);
             std::cout << "[WS] New game. Sending: " << response << std::endl;
@@ -600,6 +604,8 @@ void handle_client(SOCKET client_sock)
 
             // Lock engine state for the duration of move + search
             CSLock lock(engine_cs);
+            parse_FEN_string(session_fen); // load client's personal board state
+            ply = 0; // reset global ply to prevent issues between searches
 
             // 1. Parse and validate the player's move
             int move = parse_move_string(move_str);
@@ -652,6 +658,7 @@ void handle_client(SOCKET client_sock)
             if (!has_legal)
             {
                 std::string fen = export_fen();
+                session_fen = fen; // save back state
                 // Determine if checkmate or stalemate
                 int king_sq = (side == white) ? get_fsb(bitboards[K]) : get_fsb(bitboards[k]);
                 int in_check = is_square_attacked(king_sq, 1 - side);
@@ -681,6 +688,7 @@ void handle_client(SOCKET client_sock)
 
             // 6. Export the final FEN and send response
             std::string fen = export_fen();
+            session_fen = fen; // save back state for this client
             std::string response = json_move_result(fen, sr.bestmove, sr.score, true);
             std::cout << "[WS] Sending: " << response << std::endl;
             ws_send_frame(client_sock, response);
