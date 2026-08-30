@@ -3,39 +3,8 @@
 Define the board
 
 #############################*/
-#include "config.hpp"
+#include "ChessEngine.hpp"
 #include "Zobrist.hpp"
-//6 pieces and 2 colors so 12
-U64 bitboards[12]; 
-
-//occupancy (where pieces are) bitboards
-//white , black ,and combined
-U64 occupancies[3];
-
-//whose turn is it
-int side ;
-
-//en-passant square 
-int enpassant = no_square;//safe initialization
-
-//castling rights
-/* castling code
-0001 (1) white king, king side
-0010 (2) white king, queen side
-0100 (4) black king, king side
-1000 (8) black king, queen side
-now any combination can be represented
-ex: 1111 both kings both sides
-0011 white king both sides
-these are enum'ed in config 
-*/
-int castle;
-
-//fifty move rule counter
-int fifty;
-
-//half move counter for search, starts from 0 for each search
-int ply;
 
 //we need to convert chars 'P' to constant P , to be used by enum to convert to number index
 // 'P' will become index 80 in this int array, and will store 80 value
@@ -43,7 +12,7 @@ int ply;
 int char_pieces[128] {0};
 
 //print the board
-void print_board()
+void ChessEngine::print_board()
 {
     cout<<"\n";
     //board rank = 8 - rank
@@ -92,7 +61,7 @@ void print_board()
 }
 
 //parse FEN function
-void parse_FEN_string(const string &fen)
+void ChessEngine::parse_FEN_string(const string &fen)
 {
     //reset board, occupancies and state variables
     memset(bitboards, 0ULL, sizeof(bitboards));

@@ -4,11 +4,12 @@ UCI functions
 
 #############################*/
 #include "config.hpp"
-#include "MoveGenerator.hpp"
-#include "Board.hpp"
-#include "Search.hpp"
+#include "ChessEngine.hpp"
 
 #include <chrono>
+
+// Instantiate the engine used for CLI
+ChessEngine uci_engine;
 
 //get time in milisecs
 long long get_time_ms()
@@ -19,7 +20,7 @@ long long get_time_ms()
 }
 
 //parse user or GUI move string for UCI purpose (a2a3, a7a8q)
-int parse_move_string(const string& move_string)
+int ChessEngine::parse_move_string(const string& move_string)
 {
     //we need to check if move provided by the user/GUI is legal
     //so create a move list and check if that move is present in it
@@ -78,13 +79,13 @@ void parse_position(const string &command)
     if (command.compare(ind, 8, "startpos")==0)
     {
         //initialize starting position
-        parse_FEN_string(start_position);
+        uci_engine.parse_FEN_string(start_position);
     }
     //fen is present
     else
     {
         //if fen not present by mistake
-        if (command[ind]!='f') {parse_FEN_string(start_position);}
+        if (command[ind]!='f') {uci_engine.parse_FEN_string(start_position);}
         //fen present
         else
         {
@@ -95,10 +96,10 @@ void parse_position(const string &command)
             searched_for_moves = true;
             //if moves keyword found fen string is from ind till pos - 2
             if (pos!=string::npos)
-                parse_FEN_string(command.substr(ind, pos-2-ind+1));
+                uci_engine.parse_FEN_string(command.substr(ind, pos-2-ind+1));
             //if moves keyword not found, take till last
             else
-                parse_FEN_string(command.substr(ind));
+                uci_engine.parse_FEN_string(command.substr(ind));
         }
     }
     //if we havent searched for moves keyword in above code yet
@@ -116,21 +117,21 @@ void parse_position(const string &command)
             int move = 0;
             //move does not have promotion
             if (command[ind+4]==' '|| ind+4==n)
-                {move = parse_move_string(command.substr(ind, 4)); ind+=5;} //parse and shift index to next move
+                {move = uci_engine.parse_move_string(command.substr(ind, 4)); ind+=5;} //parse and shift index to next move
             //move has promotion
             else
-                {move = parse_move_string(command.substr(ind, 5)); ind+=6;} //parse and shift index to next move
+                {move = uci_engine.parse_move_string(command.substr(ind, 5)); ind+=6;} //parse and shift index to next move
             
             //illegal move
             if (move==0)
                 break;
             
             //make the move on the chess board
-            make_move(move, all_moves);
+            uci_engine.make_move(move, all_moves);
         }
     }
     //debugging purpose
-    print_board();
+    uci_engine.print_board();
 }
 
 extern long long search_time_limit;
@@ -178,7 +179,7 @@ void parse_go(const string &command)
             ind++;
         }
 
-        if (side == white) {
+        if (uci_engine.side == white) {
             time_to_search = wtime / 30;
         } else {
             time_to_search = btime / 30;
@@ -189,14 +190,16 @@ void parse_go(const string &command)
         depth = 64; // Default to searching as deep as possible if no depth provided
     }
     
+    // Set engine limits
     if (time_to_search != -1) {
-        search_time_limit = time_to_search;
+        uci_engine.search_time_limit = time_to_search;
     } else {
-        search_time_limit = 4500; // default to 4.5s if no time control provided
+        uci_engine.search_time_limit = 4500; // default to 4.5s if no time control provided
     }
+    uci_engine.time_stopped = false;
 
     //search position
-    search_position(depth);
+    uci_engine.search_position(depth);
 }
 
 //main UCI loop to connect with GUI
@@ -224,7 +227,7 @@ void uci_loop()
         
         //parse debug "d" command
         if (input=="d")
-            print_board();
+            uci_engine.print_board();
         //GUI say isready, engine should say readyok
         else if (input.substr(0, 7)=="isready")
         {

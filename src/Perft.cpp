@@ -4,12 +4,12 @@ Perft test
 
 #############################*/
 #include "config.hpp"
-#include "MoveGenerator.hpp"
+#include "ChessEngine.hpp"
 #include "UCI.hpp"
 
 //the perft test
 //takes depth as parameter returns number of nodes
-U64 perft(int depth)
+U64 ChessEngine::perft(int depth)
 {
     //base case of recursion, return one node at last level
     if (depth==0) return 1ULL;
@@ -37,8 +37,8 @@ U64 perft(int depth)
 }
 
 //to run the test
-//this will start the test ans measure time
-void perft_test(int depth)
+//this will start the test and measure time
+void ChessEngine::perft_test(int depth)
 {
     //time at start of test
     U64 start_time = get_time_ms();

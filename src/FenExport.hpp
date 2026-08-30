@@ -13,7 +13,7 @@ This is a READ-ONLY utility — it does NOT modify any engine globals.
 #include <string>
 #include <sstream>
 
-static inline std::string export_fen()
+inline std::string ChessEngine::export_fen()
 {
     std::ostringstream fen;
 

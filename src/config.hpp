@@ -248,4 +248,6 @@ constexpr U64 bishop_magic_numbers[64] = {
     0x4010011029020020ULL
 };
 
+#define MAX_PLY 128
+
 #endif

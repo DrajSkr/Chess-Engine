@@ -24,26 +24,14 @@ void print_bitboard(U64 bitboard)
 //Precalculated Attack Tables (PAT)
 #include "PAT.hpp"
 
-//Define the board
-#include "Board.hpp"
-
-//Magic number generator
-//#include "MagicGenerator.hpp" 
-
-//Move generator
-#include "MoveGenerator.hpp"
+// Chess Engine (includes Board, MoveGenerator, Evaluate, Search)
+#include "ChessEngine.hpp"
 
 //Perft test
 #include "Perft.hpp"
 
 //UCI functions
 #include "UCI.hpp"
-
-//Evaluate
-#include "Evaluate.hpp"
-
-//Search
-#include "Search.hpp"
 
 /*##########################
 

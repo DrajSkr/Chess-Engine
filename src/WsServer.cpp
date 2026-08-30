@@ -35,10 +35,7 @@ Protocol (JSON over WebSocket):
 
 #include <iostream>
 #include <string>
-#include "SearchCapture.hpp"
-#include "FenExport.hpp"
-#include "MagicGenerator.hpp"
-#include "Zobrist.hpp"
+#include "ChessEngine.hpp"
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -55,26 +52,25 @@ Protocol (JSON over WebSocket):
 #include "MoveGenerator.hpp"
 #include "UCI.hpp"
 
-// Our new utilities (read-only, no engine modifications)
+// Our new utilities
 #include "FenExport.hpp"
-#include "SearchCapture.hpp"
+#include "MagicGenerator.hpp"
 
 #ifdef _WIN32
-// Global critical section to protect engine state during search
-CRITICAL_SECTION engine_cs;
 // P2P Room state
 CRITICAL_SECTION rooms_cs;
 #else
 #include <mutex>
 #include <thread>
-std::mutex engine_cs;
 std::mutex rooms_cs;
 #endif
 
+// Global room tracking
 struct Room {
     std::string roomId;
     SOCKET player1;   // first to join
     SOCKET player2;   // second to join
+    ChessEngine engine;
     Room() : player1(INVALID_SOCKET), player2(INVALID_SOCKET) {}
 };
 std::map<std::string, Room> rooms;
@@ -427,9 +423,9 @@ void init_engine()
     promoted_pieces[b] = 'b';
     promoted_pieces[n] = 'n';
     
-    // Init TT
+    
+    // Init TT globally for random keys
     init_zobrist();
-    // init_tt(16); // 16 MB TT default
 }
 
 /*##########################
@@ -448,13 +444,13 @@ void handle_client(SOCKET client_sock)
 
     std::cout << "[WS] Handshake successful." << std::endl;
 
+    ChessEngine engine;
     std::string session_fen = start_position;
 
     // Send initial game state
     {
-        CSLock lock(engine_cs);
-        parse_FEN_string(session_fen);
-        std::string fen = export_fen();
+        engine.parse_FEN_string(session_fen);
+        std::string fen = engine.export_fen();
         std::string response = json_game_state(fen, 0);
         std::cout << "[WS] Sending initial state: " << response << std::endl;
         ws_send_frame(client_sock, response);
@@ -477,9 +473,8 @@ void handle_client(SOCKET client_sock)
         if (msg_type == "new_game")
         {
             session_fen = start_position;
-            CSLock lock(engine_cs);
-            parse_FEN_string(session_fen);
-            std::string fen = export_fen();
+            engine.parse_FEN_string(session_fen);
+            std::string fen = engine.export_fen();
             std::string response = json_game_state(fen, 0);
             std::cout << "[WS] New game. Sending: " << response << std::endl;
             ws_send_frame(client_sock, response);
@@ -603,23 +598,21 @@ void handle_client(SOCKET client_sock)
                 continue;
             }
 
-            // Lock engine state for the duration of move + search
-            CSLock lock(engine_cs);
             if (!fen_str.empty()) {
-                parse_FEN_string(fen_str);
+                engine.parse_FEN_string(fen_str);
             } else {
-                parse_FEN_string(session_fen); // load client's personal board state
+                engine.parse_FEN_string(session_fen); // load client's personal board state
             }
-            ply = 0; // reset global ply to prevent issues between searches
+            engine.ply = 0; // reset global ply to prevent issues between searches
             
             // Fix concurrency: Clear TT and regenerate hash key to prevent cross-client poisoning
-            clear_tt();
-            hash_key = generate_hash_key();
+            engine.clear_tt();
+            engine.hash_key = engine.generate_hash_key();
 
             // 1 & 2. Parse and apply the move ONLY if fen_str was not provided.
             // If fen_str was provided, the move is already applied in the FEN.
             if (fen_str.empty()) {
-                int move = parse_move_string(move_str);
+                int move = engine.parse_move_string(move_str);
                 if (move == 0)
                 {
                     std::string err = json_error("Illegal move: " + move_str);
@@ -628,7 +621,7 @@ void handle_client(SOCKET client_sock)
                     continue;
                 }
 
-                if (!make_move(move, all_moves))
+                if (!engine.make_move(move, all_moves))
                 {
                     std::string err = json_error("Illegal move (leaves king in check): " + move_str);
                     std::cout << "[WS] " << err << std::endl;
@@ -642,38 +635,38 @@ void handle_client(SOCKET client_sock)
 
             // 3. Check if game is over after player's move
             MoveList check_list;
-            generate_moves(check_list);
+            engine.generate_moves(check_list);
             bool has_legal = false;
             for (int i = 0; i < check_list.index; i++)
             {
                 // Save state to test legality
                 U64 bb_copy[12], occ_copy[3];
-                memcpy(bb_copy, bitboards, 96);
-                memcpy(occ_copy, occupancies, 24);
-                int side_c = side, ep_c = enpassant, castle_c = castle, fifty_c = fifty;
+                memcpy(bb_copy, engine.bitboards, 96);
+                memcpy(occ_copy, engine.occupancies, 24);
+                int side_c = engine.side, ep_c = engine.enpassant, castle_c = engine.castle, fifty_c = engine.fifty;
 
-                if (make_move(check_list.moves[i], all_moves))
+                if (engine.make_move(check_list.moves[i], all_moves))
                 {
                     has_legal = true;
                     // Restore state
-                    memcpy(bitboards, bb_copy, 96);
-                    memcpy(occupancies, occ_copy, 24);
-                    side = side_c; enpassant = ep_c; castle = castle_c; fifty = fifty_c;
+                    memcpy(engine.bitboards, bb_copy, 96);
+                    memcpy(engine.occupancies, occ_copy, 24);
+                    engine.side = side_c; engine.enpassant = ep_c; engine.castle = castle_c; engine.fifty = fifty_c;
                     break;
                 }
                 // make_move already restores on illegal, but let's be safe
-                memcpy(bitboards, bb_copy, 96);
-                memcpy(occupancies, occ_copy, 24);
-                side = side_c; enpassant = ep_c; castle = castle_c; fifty = fifty_c;
+                memcpy(engine.bitboards, bb_copy, 96);
+                memcpy(engine.occupancies, occ_copy, 24);
+                engine.side = side_c; engine.enpassant = ep_c; engine.castle = castle_c; engine.fifty = fifty_c;
             }
 
             if (!has_legal)
             {
-                std::string fen = export_fen();
+                std::string fen = engine.export_fen();
                 session_fen = fen; // save back state
                 // Determine if checkmate or stalemate
-                int king_sq = (side == white) ? get_fsb(bitboards[K]) : get_fsb(bitboards[k]);
-                int in_check = is_square_attacked(king_sq, 1 - side);
+                int king_sq = (engine.side == white) ? get_fsb(engine.bitboards[K]) : get_fsb(engine.bitboards[k]);
+                int in_check = engine.is_square_attacked(king_sq, 1 - engine.side);
                 std::ostringstream go_ss;
                 go_ss << "{\"type\":\"game_over\",\"fen\":\"" << fen
                       << "\",\"reason\":\"" << (in_check ? "checkmate" : "stalemate")
@@ -685,21 +678,21 @@ void handle_client(SOCKET client_sock)
 
             // 4. Run the engine search
             std::cout << "[WS] Starting engine search at depth " << SEARCH_DEPTH << "..." << std::endl;
-            SearchResult sr = capture_search(SEARCH_DEPTH);
+            SearchResult sr = engine.capture_search(SEARCH_DEPTH);
             std::cout << "[WS] Engine found bestmove: " << sr.bestmove << " score: " << sr.score << std::endl;
 
             // 5. Make the engine's move on the board
             if (!sr.bestmove.empty())
             {
-                int engine_move = parse_move_string(sr.bestmove);
+                int engine_move = engine.parse_move_string(sr.bestmove);
                 if (engine_move != 0)
                 {
-                    make_move(engine_move, all_moves);
+                    engine.make_move(engine_move, all_moves);
                 }
             }
 
             // 6. Export the final FEN and send response
-            std::string fen = export_fen();
+            std::string fen = engine.export_fen();
             session_fen = fen; // save back state for this client
             std::string response = json_move_result(fen, sr.bestmove, sr.score, true);
             std::cout << "[WS] Sending: " << response << std::endl;
@@ -782,9 +775,7 @@ int main()
 
     // Initialize engine (same as main.cpp)
     init_engine();
-    parse_FEN_string(start_position);
 #ifdef _WIN32
-    InitializeCriticalSection(&engine_cs);
     InitializeCriticalSection(&rooms_cs);
 #endif
     srand((unsigned int)time(NULL));

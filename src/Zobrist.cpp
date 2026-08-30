@@ -1,3 +1,4 @@
+#include "ChessEngine.hpp"
 #include "Zobrist.hpp"
 #include "Board.hpp"
 #include <cstdlib>
@@ -9,8 +10,6 @@ U64 piece_keys[12][64];
 U64 enpassant_keys[64];
 U64 castle_keys[16];
 U64 side_key;
-
-U64 hash_key = 0ULL;
 
 TTEntry* tt_table = nullptr;
 int tt_size = 0;
@@ -40,7 +39,7 @@ void init_zobrist() {
     side_key = random_u64();
 }
 
-U64 generate_hash_key() {
+U64 ChessEngine::generate_hash_key() {
     U64 final_key = 0;
     
     // Pieces
@@ -69,44 +68,14 @@ U64 generate_hash_key() {
     return final_key;
 }
 
-void init_tt(int megabytes) {
-    int hash_size = 0x100000 * megabytes; // MB to bytes
-    tt_size = hash_size / sizeof(TTEntry);
-    
-    if (tt_table != nullptr) {
-        free(tt_table);
-    }
-    
-    tt_table = (TTEntry*)malloc(tt_size * sizeof(TTEntry));
-    if (tt_table == nullptr) {
-        std::cout << "Couldn't allocate memory for TT!\n";
-        tt_size = 0;
-    } else {
-        clear_tt();
-    }
-}
-
-void free_tt() {
-    if (tt_table) {
-        free(tt_table);
-        tt_table = nullptr;
-    }
-}
-
-void clear_tt() {
-    if (tt_table) {
-        memset(tt_table, 0, tt_size * sizeof(TTEntry));
-    }
-}
-
-int read_tt(int depth, int alpha, int beta, int *best_move) {
+int ChessEngine::read_tt(int alpha, int beta, int depth) {
     if (tt_size == 0) return 100000;
     
     TTEntry *entry = &tt_table[hash_key % tt_size];
     
     if (entry->key == hash_key) {
         // We found a match, so extract the best move (useful for move sorting even if depth is lower)
-        *best_move = entry->best_move;
+        best_move = entry->best_move;
         
         // If the entry depth is sufficient, we can use the score
         if (entry->depth >= depth) {
@@ -131,7 +100,7 @@ int read_tt(int depth, int alpha, int beta, int *best_move) {
     return 100000; // Value indicating failure to find a usable score
 }
 
-void write_tt(int depth, int score, int flag, int best_move) {
+void ChessEngine::write_tt(int score, int depth, int hash_flag) {
     if (tt_size == 0) return;
     
     TTEntry *entry = &tt_table[hash_key % tt_size];
@@ -143,7 +112,7 @@ void write_tt(int depth, int score, int flag, int best_move) {
     
     entry->key = hash_key;
     entry->depth = depth;
-    entry->flag = flag;
+    entry->flag = hash_flag;
     entry->score = score;
     entry->best_move = best_move;
 }

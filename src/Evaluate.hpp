@@ -168,9 +168,9 @@ constexpr int mirror_square[64] =
 // PeSTO's material values (used for base score, already included in the tables above)
 // We add them here just in case they are needed elsewhere, but the tables below add material + pos
 constexpr int mg_value[12] = { 82, 337, 365, 477, 1025, 0, 82, 337, 365, 477, 1025, 0};
-constexpr int eg_value[12] = { 94, 281, 297, 512,  936, 0, 94, 281, 297, 512,  936, 0};
+constexpr int eg_value[12] = { 94, 281, 297, 512,  936, 0, 94, 281, 297, 512, 936, 0};
 
-static inline int evaluate()
+inline int ChessEngine::evaluate()
 {
     int mg_score = 0;
     int eg_score = 0;

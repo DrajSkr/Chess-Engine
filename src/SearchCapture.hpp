@@ -23,13 +23,8 @@ Does NOT modify Search.cpp or Search.hpp.
 // Captures the bestmove string from the engine's search output.
 // search_position() prints "bestmove e2e4\n" to cout.
 // We redirect cout to a stringstream, run the search, then restore cout.
-struct SearchResult
-{
-    std::string bestmove;  // e.g. "e2e4" or "e7e8q"
-    int score;             // centipawn score from white's perspective
-};
 
-static inline SearchResult capture_search(int max_depth)
+inline SearchResult ChessEngine::capture_search(int max_depth)
 {
     SearchResult result;
     result.score = 0;

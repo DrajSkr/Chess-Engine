@@ -4,13 +4,13 @@ Move generator
 
 #############################*/
 #include "config.hpp"
-#include "MoveGenerator.hpp"
+#include "ChessEngine.hpp"
 
 //convert promoted piece to character
 char promoted_pieces[128];
 
 //print function for testing
-void print_attacked_squares(int side)
+void ChessEngine::print_attacked_squares(int attacking_side)
 {
     cout<<"\n";
     for (int rank = 0; rank<8; rank++)
@@ -21,7 +21,7 @@ void print_attacked_squares(int side)
             // rank 8 is top most, chess board like normal 
             // counting from top left
             int square = 8*rank + file;
-            cout<<is_square_attacked(square, side)<<" ";
+            cout<<is_square_attacked(square, attacking_side)<<" ";
         }
         cout<<"\n";
     }

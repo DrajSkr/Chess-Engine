@@ -12,24 +12,11 @@ Search
 #include "MoveGenerator.hpp"
 #include "Zobrist.hpp"
 
-//best move variable
-extern int best_move;
-
 #include <cmath> // for std::abs
 #include "UCI.hpp"
 
-extern U64 search_nodes;
-extern bool time_stopped;
-extern long long search_time_limit;
-extern long long search_start_time;
-
-// Search Heuristics
-#define MAX_PLY 128
-extern int killer_moves[2][MAX_PLY];
-extern int history_moves[12][64];
-
 // Clear heuristics before search
-static inline void clear_heuristics() {
+inline void ChessEngine::clear_heuristics() {
     for (int i = 0; i < MAX_PLY; i++) {
         killer_moves[0][i] = 0;
         killer_moves[1][i] = 0;
@@ -42,7 +29,7 @@ static inline void clear_heuristics() {
 }
 
 // Score move for move ordering
-static inline int score_move(int move, int pv_move) {
+inline int ChessEngine::score_move(int move, int pv_move) {
     if (move == pv_move) {
         return 20000; // Best move from TT searched first
     }
@@ -79,7 +66,7 @@ static inline int score_move(int move, int pv_move) {
 }
 
 // Sort moves based on their score
-static inline void sort_moves(MoveList& move_list, int pv_move) {
+inline void ChessEngine::sort_moves(MoveList& move_list, int pv_move) {
     int scores[256];
     for (int i = 0; i < move_list.index; i++) {
         scores[i] = score_move(move_list.moves[i], pv_move);
@@ -105,7 +92,7 @@ static inline void sort_moves(MoveList& move_list, int pv_move) {
 }
 
 // Quiescence search to avoid the horizon effect
-static inline int quiescence(int alpha, int beta)
+inline int ChessEngine::quiescence(int alpha, int beta)
 {
     if (time_stopped) return 0;
     search_nodes++;
@@ -168,7 +155,7 @@ static inline int quiescence(int alpha, int beta)
 }
 
 //negamax function
-static inline int negamax(int alpha, int beta, int depth)
+inline int ChessEngine::negamax(int alpha, int beta, int depth)
 {
     if (time_stopped) return 0;
     search_nodes++;
@@ -182,7 +169,9 @@ static inline int negamax(int alpha, int beta, int depth)
     int pv_move = 0;
     
     // Check Transposition Table
-    int tt_score = read_tt(depth, alpha, beta, &pv_move);
+    best_move = 0;
+    int tt_score = read_tt(alpha, beta, depth);
+    pv_move = best_move;
     if (tt_score != 100000) {
         // We can immediately return the cached score
         if (ply == 0 && pv_move != 0) {
@@ -287,7 +276,8 @@ static inline int negamax(int alpha, int beta, int depth)
 
             if (childscore>=beta)
             {
-                write_tt(depth, beta, hash_beta, move_list.moves[i]);
+                best_move = move_list.moves[i];
+                write_tt(beta, depth, hash_beta);
                 
                 // Quiet move caused a beta cutoff
                 if (!decode_move_capture(move_list.moves[i])) {
@@ -327,7 +317,8 @@ static inline int negamax(int alpha, int beta, int depth)
             return 0; 
     }
 
-    write_tt(depth, alpha, hash_flag, local_best_move);
+    best_move = local_best_move;
+    write_tt(alpha, depth, hash_flag);
     return alpha;
 }
 

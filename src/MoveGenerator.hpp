@@ -12,23 +12,22 @@ Move generator
 #include "Zobrist.hpp"
 
 //check if a square is attacked by the side to move
-static inline int is_square_attacked(int square, int side)
+inline int ChessEngine::is_square_attacked(int square, int attacking_side)
 {
     // pass bishop the occupancies of both pieces (the blockers)
     //if white is to move, we see overlaps with white pieces
-    if (get_bishop_attack(square, occupancies[both]) & ((side==white)?bitboards[B]:bitboards[b])) return 1;
+    if (get_bishop_attack(square, occupancies[both]) & ((attacking_side==white)?bitboards[B]:bitboards[b])) return 1;
     //repeating for other pieces
-    if (get_rook_attack(square, occupancies[both]) & ((side==white)?bitboards[R]:bitboards[r])) return 1;
-    if (get_queen_attack(square, occupancies[both]) & ((side==white)?bitboards[Q]:bitboards[q])) return 1;
-    if (knight_attacks[square] & ((side==white)?bitboards[N]:bitboards[n])) return 1;
-    if (king_attacks[square] & ((side==white)?bitboards[K]:bitboards[k])) return 1;
+    if (get_rook_attack(square, occupancies[both]) & ((attacking_side==white)?bitboards[R]:bitboards[r])) return 1;
+    if (get_queen_attack(square, occupancies[both]) & ((attacking_side==white)?bitboards[Q]:bitboards[q])) return 1;
+    if (knight_attacks[square] & ((attacking_side==white)?bitboards[N]:bitboards[n])) return 1;
+    if (king_attacks[square] & ((attacking_side==white)?bitboards[K]:bitboards[k])) return 1;
     //we keep pieces of opposite color on the square to test so we use !side
-    if (pawn_attacks[(!side)][square] & ((side==white)?bitboards[P]:bitboards[p])) return 1;
+    if (pawn_attacks[(!attacking_side)][square] & ((attacking_side==white)?bitboards[P]:bitboards[p])) return 1;
     return 0;
 }
 
-//print function for testing
-void print_attacked_squares(int side);
+//print attacked square (implementation in cpp)
 
 /*
           binary move bits                               hexidecimal constants
@@ -121,7 +120,7 @@ class MoveList
 };
 
 //function to generate all legal moves
-static inline void generate_moves(MoveList &move_list)
+inline void ChessEngine::generate_moves(MoveList &move_list)
 {
     //source & target square
     int source_square, target_square;
@@ -558,7 +557,7 @@ constexpr int castling_rights[64] = {
 };
 
 //make move function
-static inline int make_move(int move, int move_flag)
+inline bool ChessEngine::make_move(int move, int move_flag)
 {
     //all moves are allowed
     if (move_flag==all_moves)

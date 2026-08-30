@@ -5,26 +5,14 @@ Search
 #############################*/
 
 #include "config.hpp"
-#include "Board.hpp"
-#include "MoveGenerator.hpp"
-#include "Search.hpp"
+#include "config.hpp"
+#include "ChessEngine.hpp"
 #include "UCI.hpp"
 
-//best move variable (will be removed when we start storing principal variation)
-int best_move;
-
-// Time management variables
-long long search_time_limit = 4500; // default 4.5 seconds
-long long search_start_time = 0;
-bool time_stopped = false;
-U64 search_nodes = 0;
-
-// Search heuristics
-int killer_moves[2][MAX_PLY];
-int history_moves[12][64];
+// No global variables; they are now members of ChessEngine
 
 //search position for best move
-void search_position(int max_depth)
+void ChessEngine::search_position(int max_depth)
 {
     // Start timing
     search_start_time = get_time_ms();
