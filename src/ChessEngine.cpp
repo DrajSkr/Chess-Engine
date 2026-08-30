@@ -1,6 +1,7 @@
 #include "ChessEngine.hpp"
 #include <cstring>
 #include <cstdlib>
+#include <algorithm>
 
 ChessEngine::ChessEngine() {
     memset(bitboards, 0, sizeof(bitboards));
@@ -12,7 +13,6 @@ ChessEngine::ChessEngine() {
     ply = 0;
     
     hash_key = 0;
-    tt_table = nullptr;
     tt_size = 0;
 
     best_move = 0;
@@ -27,17 +27,17 @@ ChessEngine::ChessEngine() {
 }
 
 ChessEngine::~ChessEngine() {
-    if (tt_table) free(tt_table);
 }
 
 void ChessEngine::init_tt(int megabytes) {
     int hash_size = 0x100000 * megabytes;
     tt_size = hash_size / sizeof(TTEntry);
-    if (tt_table) free(tt_table);
-    tt_table = (TTEntry*)malloc(hash_size);
+    tt_table.resize(tt_size);
     clear_tt();
 }
 
 void ChessEngine::clear_tt() {
-    if (tt_table) memset(tt_table, 0, tt_size * sizeof(TTEntry));
+    if (!tt_table.empty()) {
+        std::fill(tt_table.begin(), tt_table.end(), TTEntry{0, 0, 0, 0, 0});
+    }
 }

@@ -11,8 +11,7 @@ U64 enpassant_keys[64];
 U64 castle_keys[16];
 U64 side_key;
 
-TTEntry* tt_table = nullptr;
-int tt_size = 0;
+// No globals for tt_table needed anymore
 
 // Simple 64-bit PRNG
 U64 random_u64() {

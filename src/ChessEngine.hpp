@@ -4,6 +4,7 @@
 #include "config.hpp"
 #include "Zobrist.hpp"
 #include "Board.hpp" // IWYU pragma: keep
+#include <vector>
 
 struct SearchResult {
     string bestmove;
@@ -21,7 +22,7 @@ public:
     int ply;
     
     U64 hash_key;
-    TTEntry* tt_table;
+    std::vector<TTEntry> tt_table;
     int tt_size;
 
     int best_move;

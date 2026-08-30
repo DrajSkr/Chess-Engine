@@ -15,6 +15,7 @@ class ChessEngine; // Stops Clangd preamble
 #include "ChessEngine.hpp"
 #include <string>
 #include <sstream>
+#include <vector>
 
 #include "UCI.hpp"
 #include "MoveGenerator.hpp"
