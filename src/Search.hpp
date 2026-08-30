@@ -23,8 +23,25 @@ extern bool time_stopped;
 extern long long search_time_limit;
 extern long long search_start_time;
 
+// Search Heuristics
+#define MAX_PLY 128
+extern int killer_moves[2][MAX_PLY];
+extern int history_moves[12][64];
 
-// Score move for move ordering (MVV-LVA)
+// Clear heuristics before search
+static inline void clear_heuristics() {
+    for (int i = 0; i < MAX_PLY; i++) {
+        killer_moves[0][i] = 0;
+        killer_moves[1][i] = 0;
+    }
+    for (int i = 0; i < 12; i++) {
+        for (int j = 0; j < 64; j++) {
+            history_moves[i][j] = 0;
+        }
+    }
+}
+
+// Score move for move ordering
 static inline int score_move(int move, int pv_move) {
     if (move == pv_move) {
         return 20000; // Best move from TT searched first
@@ -46,13 +63,19 @@ static inline int score_move(int move, int pv_move) {
             }
         }
         
-        // MVV-LVA score: prioritize capturing high-value pieces with low-value pieces
-        // Add 10000 to ensure captures are searched before quiet moves (which get score 0)
-        return std::abs(material_score[victim_piece]) - std::abs(material_score[attacker_piece]) + 10000;
+        // MVV-LVA score
+        return std::abs(mg_value[victim_piece]) - std::abs(mg_value[attacker_piece]) + 10000;
     }
-    
-    // Quiet moves get a base score of 0 for now (can be enhanced with history heuristic later)
-    return 0;
+    else {
+        // Quiet moves
+        if (ply < MAX_PLY) {
+            if (killer_moves[0][ply] == move) return 9000;
+            if (killer_moves[1][ply] == move) return 8000;
+        }
+        
+        // History heuristic
+        return history_moves[decode_move_piece(move)][decode_move_target(move)];
+    }
 }
 
 // Sort moves based on their score
@@ -170,15 +193,20 @@ static inline int negamax(int alpha, int beta, int depth)
         }
     }
     
+    // Check Extension
+    int king_square = ((side==white)? get_fsb(bitboards[K]) : get_fsb(bitboards[k]));
+    int king_in_check = is_square_attacked(king_square, (1-side));
+    
+    if (king_in_check) {
+        depth++;
+    }
+
     //base case of recursion: use quiescence search instead of static evaluate
     if (depth<=0)
         return quiescence(alpha, beta);
 
     // Null Move Pruning (NMP)
-    // Only attempt if we are not at the root (ply > 0), depth is high enough, 
-    // and we are not in check (null move in check is illegal).
-    int king_sq = (side == white) ? get_fsb(bitboards[K]) : get_fsb(bitboards[k]);
-    if (depth >= 3 && ply > 0 && !is_square_attacked(king_sq, 1 - side))
+    if (depth >= 3 && ply > 0 && !king_in_check)
     {
         // Make a null move (pass turn)
         int ep_copy = enpassant;
@@ -194,123 +222,111 @@ static inline int negamax(int alpha, int beta, int depth)
         side ^= 1;
         enpassant = ep_copy;
         
-        // If the score after skipping a turn is still >= beta, opponent won't allow this branch
         if (null_score >= beta)
             return beta;
     }
 
-    //move list
     MoveList move_list;
-
-    //generate moves
     generate_moves(move_list);
-
-    //sort moves to improve alpha-beta pruning (Move Ordering)
     sort_moves(move_list, pv_move);
 
-    //legal moves count
     int legal_moves=0;
     int moves_searched=0;
     int hash_flag = hash_alpha;
     int local_best_move = 0;
 
-    //king in check flag
-    //check if king is attacked by the other side
-    int king_square = ((side==white)? get_fsb(bitboards[K]) : get_fsb(bitboards[k]));
-    int king_in_check = is_square_attacked(king_square, (1-side));
-
-    //iterate over all possible moves
     for (int i=0;i<move_list.index;i++)
     {
-        //preserve game state
         copy_board();
-
-        //increment half move counter
         ply++;
 
-        //make only legal moves
         if (make_move(move_list.moves[i], all_moves))
         {            
-            //increment legal moves count
             legal_moves++;
-
             int childscore;
 
-            // Principal Variation Search (PVS)
-            if (moves_searched == 0)
-            {
-                // First move: full window search
-                childscore = -1 * negamax(-1*beta, -1*alpha, depth-1);
-            }
-            else
-            {
-                // Subsequent moves: zero-width window to prove they are worse
-                childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-1);
-
-                // If it failed high, we need a full re-search
-                if (childscore > alpha && childscore < beta)
+            // Late Move Reductions (LMR)
+            // If we've searched a few moves (meaning they were likely best), and depth is high enough,
+            // and this is a quiet move (not a capture, not in check), search it shallower.
+            bool is_capture = decode_move_capture(move_list.moves[i]);
+            
+            // Note: king_in_check is for the CURRENT node, we should check if the new move gives check
+            // For simplicity, we just check if it's not a capture, not a promotion, and depth > 2
+            bool is_promotion = decode_move_promo_piece(move_list.moves[i]) != 0;
+            
+            if (moves_searched >= 4 && depth >= 3 && !king_in_check && !is_capture && !is_promotion) {
+                // Reduced depth search
+                childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-2);
+                
+                // If it fails high, do a full depth search
+                if (childscore > alpha) {
+                    childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-1);
+                    if (childscore > alpha && childscore < beta) {
+                        childscore = -1 * negamax(-1*beta, -1*alpha, depth-1);
+                    }
+                }
+            } else {
+                // Principal Variation Search (PVS)
+                if (moves_searched == 0)
                 {
                     childscore = -1 * negamax(-1*beta, -1*alpha, depth-1);
+                }
+                else
+                {
+                    childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-1);
+                    if (childscore > alpha && childscore < beta)
+                    {
+                        childscore = -1 * negamax(-1*beta, -1*alpha, depth-1);
+                    }
                 }
             }
             
             moves_searched++;
-
-            //decrement half move counter
             ply--;
-            //take back the move
             take_back();
 
-            //fail hard
             if (childscore>=beta)
             {
-                //node fails high (terminology)
                 write_tt(depth, beta, hash_beta, move_list.moves[i]);
+                
+                // Quiet move caused a beta cutoff
+                if (!decode_move_capture(move_list.moves[i])) {
+                    if (ply < MAX_PLY) {
+                        killer_moves[1][ply] = killer_moves[0][ply];
+                        killer_moves[0][ply] = move_list.moves[i];
+                    }
+                    history_moves[decode_move_piece(move_list.moves[i])][decode_move_target(move_list.moves[i])] += depth * depth;
+                }
+                
                 return beta;
             }
 
-            //if this child score is better then current best (which is alpha) 
             if (childscore>alpha) 
             {
                 hash_flag = hash_exact;
                 local_best_move = move_list.moves[i];
                 
-                //principle variation node (terminology)
-                if (ply==0) //root node
+                if (ply==0) 
                 {
-                    // cout<<"hi "; 
-                    //associating best move with best score
                     best_move = move_list.moves[i];
-                    // print_move(current_best_move);cout<<" "<<depth<<"\n";
                 }
             }
-            //update alpha
             alpha = max(alpha, childscore);
         }
         else
         {            
-            //decrement half move counter
             ply--;
         }            
     }
     
-    //check if we have 0 legal moves
     if (legal_moves==0)
     {
-        //if in check and no legal moves, checkmate
         if (king_in_check)
-            //return mating score
-            return -49000+ply; //slightly less than -INF to keep it within alpha beta bounds
-            //ply is necessary to distinguish between different mates (M1/M4), more detail in notion doc
-    
-        //else stalemate
+            return -49000+ply;
         else 
-            //return stalemate score;
-            return 0; //stalemate is draw
+            return 0; 
     }
 
-    //return the best score
-    //node fails low (terminology)
     write_tt(depth, alpha, hash_flag, local_best_move);
     return alpha;
 }

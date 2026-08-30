@@ -611,6 +611,10 @@ void handle_client(SOCKET client_sock)
                 parse_FEN_string(session_fen); // load client's personal board state
             }
             ply = 0; // reset global ply to prevent issues between searches
+            
+            // Fix concurrency: Clear TT and regenerate hash key to prevent cross-client poisoning
+            clear_tt();
+            hash_key = generate_hash_key();
 
             // 1. Parse and validate the player's move
             int move = parse_move_string(move_str);

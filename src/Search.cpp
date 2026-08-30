@@ -19,6 +19,10 @@ long long search_start_time = 0;
 bool time_stopped = false;
 U64 search_nodes = 0;
 
+// Search heuristics
+int killer_moves[2][MAX_PLY];
+int history_moves[12][64];
+
 //search position for best move
 void search_position(int max_depth)
 {
@@ -26,6 +30,9 @@ void search_position(int max_depth)
     search_start_time = get_time_ms();
     time_stopped = false;
     search_nodes = 0;
+    
+    // Clear heuristics
+    clear_heuristics();
     
     int current_best_move = 0;
 

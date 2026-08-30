@@ -39,6 +39,9 @@ static inline SearchResult capture_search(int max_depth)
     search_start_time = get_time_ms();
     time_stopped = false;
     search_nodes = 0;
+    
+    // Clear heuristics
+    clear_heuristics();
 
     int current_best_move = 0;
     int current_best_score = 0;
