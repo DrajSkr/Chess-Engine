@@ -18,6 +18,8 @@ Does NOT modify Search.cpp or Search.hpp.
 #include <string>
 #include <sstream>
 
+#include "UCI.hpp"
+
 // Captures the bestmove string from the engine's search output.
 // search_position() prints "bestmove e2e4\n" to cout.
 // We redirect cout to a stringstream, run the search, then restore cout.
@@ -27,37 +29,22 @@ struct SearchResult
     int score;             // centipawn score from white's perspective
 };
 
-static inline SearchResult capture_search(int depth)
+static inline SearchResult capture_search(int max_depth)
 {
     SearchResult result;
     result.score = 0;
     result.bestmove = "";
 
-    // Run negamax directly to get the score
-    // We need to call it the same way search_position does
-    // but also capture the score return value
+    best_move = 0;
     ply = 0;
-    int score = negamax(-50000, 50000, depth);
+    int best_score = negamax(-50000, 50000, max_depth);
 
     // Score is from the side-to-move's perspective (negamax convention).
     // Convert to white's perspective for the eval bar.
     if (side == black)
-        result.score = score;   // negamax returns positive=good for side to move
+        result.score = -best_score;
     else
-        result.score = score;
-    // Actually: negamax returns score from current side's perspective.
-    // If white just moved, it's now black's turn. The score returned is black's perspective.
-    // We want white-relative. So if side==black (black to move after white moved), 
-    // the score from negamax is black's perspective → negate for white.
-    // If side==white (white to move after black moved), score is white's perspective → keep.
-    // But wait — we call capture_search AFTER making the player's move and BEFORE
-    // the engine makes its move. So side == black (engine is black).
-    // negamax returns score from black's perspective. Negate for white's eval bar.
-    // Let's just always convert: if side is black, negate.
-    if (side == black)
-        result.score = -score;
-    else
-        result.score = score;
+        result.score = best_score;
 
     // Extract the bestmove string from the best_move integer
     if (best_move)

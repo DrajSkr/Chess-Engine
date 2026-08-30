@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-const WS_URL = `ws://${window.location.hostname}:8080`;
+const WS_URL = import.meta.env.VITE_WS_URL || `ws://${window.location.hostname}:8080`;
 
 /**
  * Custom hook for managing WebSocket connection to the C++ engine backend.

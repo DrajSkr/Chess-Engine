@@ -4,6 +4,7 @@ Define the board
 
 #############################*/
 #include "config.hpp"
+#include "Zobrist.hpp"
 //6 pieces and 2 colors so 12
 U64 bitboards[12]; 
 
@@ -161,4 +162,7 @@ void parse_FEN_string(const string &fen)
         occupancies[black] |= bitboards[piece];
     occupancies[both] |= occupancies[white];
     occupancies[both] |= occupancies[black];
+    
+    // Initialize hash key for the parsed position
+    hash_key = generate_hash_key();
 }

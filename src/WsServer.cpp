@@ -35,6 +35,12 @@ Protocol (JSON over WebSocket):
 
 #include <iostream>
 #include <string>
+#include "SearchCapture.hpp"
+#include "FenExport.hpp"
+#include "MagicGenerator.hpp"
+#include "Zobrist.hpp"
+#include <iostream>
+#include <string>
 #include <sstream>
 #include <vector>
 #include <map>
@@ -53,12 +59,17 @@ Protocol (JSON over WebSocket):
 #include "FenExport.hpp"
 #include "SearchCapture.hpp"
 
+#ifdef _WIN32
 // Global critical section to protect engine state during search
-// (using Windows API since MinGW win32 threading model lacks std::mutex)
 CRITICAL_SECTION engine_cs;
-
 // P2P Room state
 CRITICAL_SECTION rooms_cs;
+#else
+#include <mutex>
+#include <thread>
+std::mutex engine_cs;
+std::mutex rooms_cs;
+#endif
 
 struct Room {
     std::string roomId;
@@ -91,12 +102,20 @@ static std::string find_room_for_socket(SOCKET s)
     return "";
 }
 
+#ifdef _WIN32
 // RAII wrapper for CRITICAL_SECTION
 struct CSLock {
     CRITICAL_SECTION& cs;
     CSLock(CRITICAL_SECTION& c) : cs(c) { EnterCriticalSection(&cs); }
     ~CSLock() { LeaveCriticalSection(&cs); }
 };
+#else
+// RAII wrapper for mutex
+struct CSLock {
+    std::lock_guard<std::mutex> lock;
+    CSLock(std::mutex& m) : lock(m) {}
+};
+#endif
 
 // Search depth for bot
 static const int SEARCH_DEPTH = 6;
@@ -366,6 +385,12 @@ void init_engine()
 {
     init_leapers_attacks();
     init_sliding_attacks();
+    init_magic_numbers();
+    
+    //init char_pieces
+    for (int i=0;i<128;i++)
+        char_pieces[i] = -1;
+        
     char_pieces['P'] = P;
     char_pieces['N'] = N;
     char_pieces['B'] = B;
@@ -386,6 +411,10 @@ void init_engine()
     promoted_pieces[r] = 'r';
     promoted_pieces[b] = 'b';
     promoted_pieces[n] = 'n';
+    
+    // Init TT
+    init_zobrist();
+    init_tt(16); // 16 MB TT default
 }
 
 /*##########################
@@ -439,7 +468,11 @@ void handle_client(SOCKET client_sock)
         }
         else if (msg_type == "create_room")
         {
+#ifdef _WIN32
             EnterCriticalSection(&rooms_cs);
+#else
+            rooms_cs.lock();
+#endif
             // Generate a unique room code
             std::string code;
             do {
@@ -451,7 +484,11 @@ void handle_client(SOCKET client_sock)
             room.player1 = client_sock;
             room.player2 = INVALID_SOCKET;
             rooms[code] = room;
+#ifdef _WIN32
             LeaveCriticalSection(&rooms_cs);
+#else
+            rooms_cs.unlock();
+#endif
 
             std::ostringstream response;
             response << "{\"type\":\"room_created\",\"roomId\":\"" << code << "\"}";
@@ -461,17 +498,29 @@ void handle_client(SOCKET client_sock)
         else if (msg_type == "join_room")
         {
             std::string code = json_get_string(payload, "roomId");
+#ifdef _WIN32
             EnterCriticalSection(&rooms_cs);
+#else
+            rooms_cs.lock();
+#endif
             auto it = rooms.find(code);
             if (it == rooms.end())
             {
-                LeaveCriticalSection(&rooms_cs);
+    #ifdef _WIN32
+            LeaveCriticalSection(&rooms_cs);
+#else
+            rooms_cs.unlock();
+#endif
                 ws_send_frame(client_sock, json_error("Room not found: " + code));
                 continue;
             }
             if (it->second.player2 != INVALID_SOCKET)
             {
-                LeaveCriticalSection(&rooms_cs);
+    #ifdef _WIN32
+            LeaveCriticalSection(&rooms_cs);
+#else
+            rooms_cs.unlock();
+#endif
                 ws_send_frame(client_sock, json_error("Room is full: " + code));
                 continue;
             }
@@ -483,7 +532,11 @@ void handle_client(SOCKET client_sock)
             bool hostIsWhite = (rand() % 2 == 0);
             std::string c1 = hostIsWhite ? "w" : "b";
             std::string c2 = hostIsWhite ? "b" : "w";
+#ifdef _WIN32
             LeaveCriticalSection(&rooms_cs);
+#else
+            rooms_cs.unlock();
+#endif
 
             std::ostringstream r1, r2;
             r1 << "{\"type\":\"p2p_start\",\"color\":\"" << c1 << "\",\"roomId\":\"" << code << "\"}";
@@ -496,7 +549,11 @@ void handle_client(SOCKET client_sock)
         {
             // Relay WebRTC signaling to the peer in the same room
             std::string roomId = json_get_string(payload, "roomId");
+#ifdef _WIN32
             EnterCriticalSection(&rooms_cs);
+#else
+            rooms_cs.lock();
+#endif
             auto it = rooms.find(roomId);
             if (it != rooms.end())
             {
@@ -511,7 +568,11 @@ void handle_client(SOCKET client_sock)
                     ws_send_frame(target, payload);
                 }
             }
+#ifdef _WIN32
             LeaveCriticalSection(&rooms_cs);
+#else
+            rooms_cs.unlock();
+#endif
         }
         else if (msg_type == "move")
         {
@@ -617,7 +678,11 @@ void handle_client(SOCKET client_sock)
     }
 
     // Remove from rooms and notify opponent if needed
+#ifdef _WIN32
     EnterCriticalSection(&rooms_cs);
+#else
+    rooms_cs.lock();
+#endif
     std::string room_key = find_room_for_socket(client_sock);
     if (!room_key.empty())
     {
@@ -635,11 +700,16 @@ void handle_client(SOCKET client_sock)
         rooms.erase(room_key);
         std::cout << "[WS] Room " << room_key << " destroyed (player disconnected)." << std::endl;
     }
+#ifdef _WIN32
     LeaveCriticalSection(&rooms_cs);
+#else
+    rooms_cs.unlock();
+#endif
 
     closesocket(client_sock);
 }
 
+#ifdef _WIN32
 // Thread entry point for client handling (needs WINAPI calling convention on 32-bit)
 static DWORD WINAPI client_thread_func(LPVOID arg)
 {
@@ -647,6 +717,13 @@ static DWORD WINAPI client_thread_func(LPVOID arg)
     handle_client(s);
     return 0;
 }
+#else
+// Thread entry point for client handling
+static void client_thread_func(SOCKET s)
+{
+    handle_client(s);
+}
+#endif
 
 /*##########################
   Main — start listening
@@ -672,8 +749,10 @@ int main()
     // Initialize engine (same as main.cpp)
     init_engine();
     parse_FEN_string(start_position);
+#ifdef _WIN32
     InitializeCriticalSection(&engine_cs);
     InitializeCriticalSection(&rooms_cs);
+#endif
     srand((unsigned int)time(NULL));
 
     std::cout << "[WS] Engine initialized." << std::endl;
@@ -726,10 +805,13 @@ int main()
             continue;
         }
 
+#ifdef _WIN32
         // Handle client in a new thread
-        HANDLE hThread = CreateThread(NULL, 0, client_thread_func,
-            (LPVOID)(uintptr_t)client_sock, 0, NULL);
+        HANDLE hThread = CreateThread(NULL, 0, client_thread_func, (LPVOID)(uintptr_t)client_sock, 0, NULL);
         if (hThread) CloseHandle(hThread);
+#else
+        std::thread(client_thread_func, client_sock).detach();
+#endif
     }
 
     closesocket(server_sock);

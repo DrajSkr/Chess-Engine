@@ -41,7 +41,11 @@ OBJS := $(SRCS:.cpp=.o)
 TARGET := Domino.exe
 
 # ====== WebSocket Server Configuration ======
-WS_LIBS := -lws2_32 -lwsock32
+ifeq ($(OS),Windows_NT)
+    WS_LIBS := -lws2_32 -lwsock32
+else
+    WS_LIBS := -pthread
+endif
 WS_TARGET := DominoServer.exe
 # Server sources: everything except main.cpp, plus WsServer.cpp
 WS_SRCS := $(filter-out main.cpp, $(wildcard *.cpp))

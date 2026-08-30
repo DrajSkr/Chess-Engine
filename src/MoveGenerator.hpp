@@ -9,6 +9,7 @@ Move generator
 #include "config.hpp"
 #include "PAT.hpp"
 #include "Board.hpp"
+#include "Zobrist.hpp"
 
 //check if a square is attacked by the side to move
 static inline int is_square_attacked(int square, int side)
@@ -517,13 +518,15 @@ static inline void generate_moves(MoveList &move_list)
     U64 bitboards_copy[12], occupancies_copy[3];\
     memcpy(bitboards_copy, bitboards, 96);\
     memcpy(occupancies_copy, occupancies, 24);\
-    int side_copy = side, enpassant_copy = enpassant, castle_copy = castle, fifty_copy = fifty;
+    int side_copy = side, enpassant_copy = enpassant, castle_copy = castle, fifty_copy = fifty;\
+    U64 hash_key_copy = hash_key;
 
 // restore board state
 #define take_back()                                                       \
     memcpy(bitboards, bitboards_copy, 96);                                \
     memcpy(occupancies, occupancies_copy, 24);                            \
     side = side_copy;enpassant = enpassant_copy;castle = castle_copy;fifty = fifty_copy;                                                \
+    hash_key = hash_key_copy;
 
 //castling rights update
 /*
@@ -715,6 +718,7 @@ static inline int make_move(int move, int move_flag)
             return 0;
         }
         // legal move
+        hash_key = generate_hash_key();
         return 1;
 
     }
