@@ -349,6 +349,14 @@ static bool ws_handshake(SOCKET client_sock)
     buf[r] = '\0';
     std::string request(buf);
 
+    // Handle Render Health Checks
+    if (request.find("GET /healthz") != std::string::npos || request.find("GET / ") != std::string::npos)
+    {
+        std::string ok = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK";
+        send(client_sock, ok.c_str(), (int)ok.size(), 0);
+        return false; // Close connection after health check
+    }
+
     // Extract Sec-WebSocket-Key
     std::string key_header = "Sec-WebSocket-Key: ";
     size_t key_pos = request.find(key_header);
