@@ -10,7 +10,7 @@ This is a READ-ONLY utility — it does NOT modify any engine globals.
 
 #include "config.hpp"
 #include "config.hpp"
-#include "Board.hpp"
+#include "Board.hpp" // IWYU pragma: keep
 #include "ChessEngine.hpp"
 #include <string>
 #include <sstream>

@@ -6,7 +6,7 @@ UCI functions
 #ifndef UCI_HPP
 #define UCI_HPP
 
-#include "config.hpp"
+#include "config.hpp" // IWYU pragma: keep
 
 //get time in milisecs
 long long get_time_ms();

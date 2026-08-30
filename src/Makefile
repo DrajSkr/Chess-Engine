@@ -29,7 +29,7 @@ else
 endif
 
 # Compiler Flags
-CXXFLAGS := -Wall -Wextra -std=c++17 -O3 -flto $(OPTIMIZE)
+CXXFLAGS := -Wall -Wextra -std=c++17 -O3 $(OPTIMIZE)
 
 # Find all .cpp files in the current directory except WsServer.cpp
 SRCS := $(filter-out WsServer.cpp, $(wildcard *.cpp))

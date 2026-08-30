@@ -6,11 +6,12 @@ Move generator
 #ifndef MOVEGENERATOR_HPP
 #define MOVEGENERATOR_HPP
 
+class ChessEngine; // Stops Clangd preamble
 #include "ChessEngine.hpp"
 #include "config.hpp"
 #include "PAT.hpp"
-#include "Board.hpp"
-#include "Zobrist.hpp"
+#include "Board.hpp" // IWYU pragma: keep
+#include "Zobrist.hpp" // IWYU pragma: keep
 
 //check if a square is attacked by the side to move
 inline int ChessEngine::is_square_attacked(int square, int attacking_side)

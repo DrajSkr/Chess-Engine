@@ -22,6 +22,7 @@ Protocol (JSON over WebSocket):
     #endif
     #include <winsock2.h>
     #include <ws2tcpip.h>
+    #include <process.h>
     #pragma comment(lib, "ws2_32.lib")
 #else
     #include <sys/socket.h>
@@ -263,21 +264,22 @@ static std::string ws_read_frame(SOCKET sock)
     if (payload_len == 126)
     {
         unsigned char ext[2];
-        recv(sock, (char*)ext, 2, 0);
+        if (recv(sock, (char*)ext, 2, 0) <= 0) return "";
         payload_len = ((uint64_t)ext[0] << 8) | ext[1];
     }
     else if (payload_len == 127)
     {
         unsigned char ext[8];
-        recv(sock, (char*)ext, 8, 0);
+        if (recv(sock, (char*)ext, 8, 0) <= 0) return "";
         payload_len = 0;
         for (int i = 0; i < 8; i++)
             payload_len = (payload_len << 8) | ext[i];
     }
 
     unsigned char mask_key[4] = {0};
-    if (masked)
-        recv(sock, (char*)mask_key, 4, 0);
+    if (masked) {
+        if (recv(sock, (char*)mask_key, 4, 0) <= 0) return "";
+    }
 
     std::string payload(payload_len, '\0');
     size_t received = 0;
@@ -396,7 +398,6 @@ void init_engine()
 {
     init_leapers_attacks();
     init_sliding_attacks();
-    init_magic_numbers();
     
     //init char_pieces
     for (int i=0;i<128;i++)
@@ -605,10 +606,6 @@ void handle_client(SOCKET client_sock)
             }
             engine.ply = 0; // reset global ply to prevent issues between searches
             
-            // Fix concurrency: Clear TT and regenerate hash key to prevent cross-client poisoning
-            engine.clear_tt();
-            engine.hash_key = engine.generate_hash_key();
-
             // 1 & 2. Parse and apply the move ONLY if fen_str was not provided.
             // If fen_str was provided, the move is already applied in the FEN.
             if (fen_str.empty()) {
@@ -676,6 +673,10 @@ void handle_client(SOCKET client_sock)
                 continue;
             }
 
+            // Fix concurrency: Clear TT and regenerate hash key to prevent cross-client poisoning
+            engine.clear_tt();
+            engine.hash_key = engine.generate_hash_key();
+
             // 4. Run the engine search
             std::cout << "[WS] Starting engine search at depth " << SEARCH_DEPTH << "..." << std::endl;
             SearchResult sr = engine.capture_search(SEARCH_DEPTH);
@@ -737,11 +738,17 @@ void handle_client(SOCKET client_sock)
 }
 
 #ifdef _WIN32
-// Thread entry point for client handling (needs WINAPI calling convention on 32-bit)
-static DWORD WINAPI client_thread_func(LPVOID arg)
+// Thread entry point for client handling (needs stdcall calling convention on 32-bit)
+static unsigned __stdcall client_thread_func(void* arg)
 {
-    SOCKET s = (SOCKET)(uintptr_t)arg;
-    handle_client(s);
+    try {
+        SOCKET s = (SOCKET)(uintptr_t)arg;
+        handle_client(s);
+    } catch (const std::exception& e) {
+        std::cerr << "[WS] Exception in client thread: " << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "[WS] Unknown exception in client thread." << std::endl;
+    }
     return 0;
 }
 #else
@@ -826,26 +833,32 @@ int main()
     // Accept loop — handle one client at a time (chess is a 1v1 game)
     while (true)
     {
-        struct sockaddr_in client_addr;
+        try {
+            struct sockaddr_in client_addr;
 #ifdef _WIN32
-        int addr_len = sizeof(client_addr);
+            int addr_len = sizeof(client_addr);
 #else
-        socklen_t addr_len = sizeof(client_addr);
+            socklen_t addr_len = sizeof(client_addr);
 #endif
-        SOCKET client_sock = accept(server_sock, (struct sockaddr*)&client_addr, &addr_len);
-        if (client_sock == INVALID_SOCKET)
-        {
-            std::cerr << "[WS] Accept failed." << std::endl;
-            continue;
-        }
+            SOCKET client_sock = accept(server_sock, (struct sockaddr*)&client_addr, &addr_len);
+            if (client_sock == INVALID_SOCKET)
+            {
+                std::cerr << "[WS] Accept failed." << std::endl;
+                continue;
+            }
 
 #ifdef _WIN32
-        // Handle client in a new thread
-        HANDLE hThread = CreateThread(NULL, 0, client_thread_func, (LPVOID)(uintptr_t)client_sock, 0, NULL);
-        if (hThread) CloseHandle(hThread);
+            // Handle client in a new thread
+            HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, client_thread_func, (void*)(uintptr_t)client_sock, 0, NULL);
+            if (hThread) CloseHandle(hThread);
 #else
-        std::thread(client_thread_func, client_sock).detach();
+            std::thread(client_thread_func, client_sock).detach();
 #endif
+        } catch (const std::exception& e) {
+            std::cerr << "[WS] Exception in accept loop: " << e.what() << std::endl;
+        } catch (...) {
+            std::cerr << "[WS] Unknown exception in accept loop." << std::endl;
+        }
     }
 
     closesocket(server_sock);

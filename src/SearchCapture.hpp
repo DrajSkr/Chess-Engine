@@ -11,11 +11,14 @@ Does NOT modify Search.cpp or Search.hpp.
 #ifndef SEARCHCAPTURE_HPP
 #define SEARCHCAPTURE_HPP
 
+class ChessEngine; // Stops Clangd preamble
 #include "ChessEngine.hpp"
 #include <string>
 #include <sstream>
 
 #include "UCI.hpp"
+#include "MoveGenerator.hpp"
+#include "Search.hpp"
 
 // Captures the bestmove string from the engine's search output.
 // search_position() prints "bestmove e2e4\n" to cout.

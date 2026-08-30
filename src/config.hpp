@@ -7,10 +7,10 @@ Including system files
 
 #############################*/
 
-#include<iostream>
-#include <array>
-#include<string.h>
-#include <string>
+#include<iostream> // IWYU pragma: keep
+#include <array> // IWYU pragma: keep
+#include<string.h> // IWYU pragma: keep
+#include <string> // IWYU pragma: keep
 //for unicodes
 #ifdef _WIN32 //if comipiling on windows
     #include <windows.h>  // Windows-specific header Required for SetConsoleOutputCP() and time ms functions

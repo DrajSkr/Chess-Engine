@@ -3,7 +3,7 @@
 Move generator
 
 #############################*/
-#include "config.hpp"
+#include "config.hpp" // IWYU pragma: keep
 #include "ChessEngine.hpp"
 
 //convert promoted piece to character

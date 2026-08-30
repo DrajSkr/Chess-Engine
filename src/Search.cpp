@@ -4,8 +4,8 @@ Search
 
 #############################*/
 
-#include "config.hpp"
-#include "config.hpp"
+#include "config.hpp" // IWYU pragma: keep
+#include "config.hpp" // IWYU pragma: keep
 #include "ChessEngine.hpp"
 #include "UCI.hpp"
 

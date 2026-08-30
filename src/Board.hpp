@@ -5,7 +5,7 @@
 Define the board
 
 #############################*/
-#include "config.hpp"
+#include "config.hpp" // IWYU pragma: keep
 
 //we need to convert chars 'P' to constant P , to be used by enum to convert to number index
 // 'P' will become index 80 in this int array, and will store 80 value

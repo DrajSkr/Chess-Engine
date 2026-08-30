@@ -1,9 +1,9 @@
 #include "ChessEngine.hpp"
 #include "Zobrist.hpp"
-#include "Board.hpp"
+#include "Board.hpp" // IWYU pragma: keep
 #include <cstdlib>
-#include <cstring>
-#include <iostream>
+#include <cstring> // IWYU pragma: keep
+#include <iostream> // IWYU pragma: keep
 
 // Zobrist keys
 U64 piece_keys[12][64];

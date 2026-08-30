@@ -1,8 +1,8 @@
 #ifndef ZOBRIST_HPP
 #define ZOBRIST_HPP
 
-#include "config.hpp"
-#include <cstdint>
+#include "config.hpp" // IWYU pragma: keep
+#include <cstdint> // IWYU pragma: keep
 
 // PRNG for 64-bit numbers (Xorshift64)
 U64 random_u64();

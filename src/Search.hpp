@@ -6,9 +6,10 @@ Search
 #ifndef SEARCH_HPP
 #define SEARCH_HPP
 
+class ChessEngine; // Stops Clangd preamble
 #include "ChessEngine.hpp"
 #include "config.hpp"
-#include "Board.hpp"
+#include "Board.hpp" // IWYU pragma: keep
 #include "Evaluate.hpp"
 #include "MoveGenerator.hpp"
 #include "Zobrist.hpp"
@@ -96,6 +97,10 @@ inline void ChessEngine::sort_moves(MoveList& move_list, int pv_move) {
 inline int ChessEngine::quiescence(int alpha, int beta)
 {
     if (time_stopped) return 0;
+    
+    // Prevent stack overflow
+    if (ply >= MAX_PLY - 1) return evaluate();
+    
     search_nodes++;
     if ((search_nodes & 2047) == 0) {
         if (get_time_ms() - search_start_time > search_time_limit) {
@@ -159,6 +164,13 @@ inline int ChessEngine::quiescence(int alpha, int beta)
 inline int ChessEngine::negamax(int alpha, int beta, int depth)
 {
     if (time_stopped) return 0;
+    
+    // Draw by 50-move rule
+    if (ply > 0 && fifty >= 100) return 0;
+    
+    // Prevent stack overflow and array out of bounds
+    if (ply >= MAX_PLY - 1) return evaluate();
+
     search_nodes++;
     if ((search_nodes & 2047) == 0) {
         if (get_time_ms() - search_start_time > search_time_limit) {

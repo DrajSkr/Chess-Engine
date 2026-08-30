@@ -6,10 +6,11 @@ Evaluate
 #ifndef EVALUATE_HPP
 #define EVALUATE_HPP
 
+class ChessEngine; // Stops Clangd preamble
 #include "ChessEngine.hpp"
 #include "config.hpp"
-#include "Board.hpp"
-#include <algorithm>
+#include "Board.hpp" // IWYU pragma: keep
+#include <algorithm> // IWYU pragma: keep
 
 // Piece values for game phase calculation (not evaluation)
 constexpr int game_phase_inc[12] = {

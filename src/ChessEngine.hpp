@@ -3,7 +3,7 @@
 
 #include "config.hpp"
 #include "Zobrist.hpp"
-#include "Board.hpp"
+#include "Board.hpp" // IWYU pragma: keep
 
 struct SearchResult {
     string bestmove;
@@ -74,9 +74,11 @@ public:
 };
 
 // Implementations of the methods declared above
+#if !defined(MOVEGENERATOR_HPP) && !defined(EVALUATE_HPP) && !defined(SEARCH_HPP) && !defined(SEARCHCAPTURE_HPP)
 #include "MoveGenerator.hpp"
 #include "Evaluate.hpp"
 #include "Search.hpp"
 #include "SearchCapture.hpp"
+#endif
 
 #endif
