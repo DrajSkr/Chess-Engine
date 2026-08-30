@@ -18,6 +18,12 @@ extern int best_move;
 #include <cmath> // for std::abs
 #include "UCI.hpp"
 
+extern U64 search_nodes;
+extern bool time_stopped;
+extern int search_time_limit;
+extern int search_start_time;
+
+
 // Score move for move ordering (MVV-LVA)
 static inline int score_move(int move, int pv_move) {
     if (move == pv_move) {
@@ -78,6 +84,15 @@ static inline void sort_moves(MoveList& move_list, int pv_move) {
 // Quiescence search to avoid the horizon effect
 static inline int quiescence(int alpha, int beta)
 {
+    if (time_stopped) return 0;
+    search_nodes++;
+    if ((search_nodes & 2047) == 0) {
+        if (get_time_ms() - search_start_time > search_time_limit) {
+            time_stopped = true;
+            return 0;
+        }
+    }
+
     // Evaluate the position (stand pat score)
     int evaluation = evaluate();
 
@@ -132,6 +147,15 @@ static inline int quiescence(int alpha, int beta)
 //negamax function
 static inline int negamax(int alpha, int beta, int depth)
 {
+    if (time_stopped) return 0;
+    search_nodes++;
+    if ((search_nodes & 2047) == 0) {
+        if (get_time_ms() - search_start_time > search_time_limit) {
+            time_stopped = true;
+            return 0;
+        }
+    }
+
     int pv_move = 0;
     
     // Check Transposition Table

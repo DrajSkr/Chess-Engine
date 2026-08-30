@@ -35,16 +35,35 @@ static inline SearchResult capture_search(int max_depth)
     result.score = 0;
     result.bestmove = "";
 
-    best_move = 0;
-    ply = 0;
-    int best_score = negamax(-50000, 50000, max_depth);
+    // Start time and reset time management variables
+    search_start_time = get_time_ms();
+    time_stopped = false;
+    search_nodes = 0;
+
+    int current_best_move = 0;
+    int current_best_score = 0;
+
+    // Use Iterative Deepening so time limit works properly
+    for (int depth = 1; depth <= max_depth; depth++) {
+        ply = 0;
+        int score = negamax(-50000, 50000, depth);
+        
+        if (time_stopped) {
+            break;
+        }
+        
+        current_best_score = score;
+        current_best_move = best_move;
+    }
+
+    best_move = current_best_move;
 
     // Score is from the side-to-move's perspective (negamax convention).
     // Convert to white's perspective for the eval bar.
     if (side == black)
-        result.score = -best_score;
+        result.score = -current_best_score;
     else
-        result.score = best_score;
+        result.score = current_best_score;
 
     // Extract the bestmove string from the best_move integer
     if (best_move)

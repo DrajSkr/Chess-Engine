@@ -118,7 +118,7 @@ struct CSLock {
 #endif
 
 // Search depth for bot
-static const int SEARCH_DEPTH = 6;
+static const int SEARCH_DEPTH = 64;
 
 /*##########################
   Base64 encoding for WebSocket handshake

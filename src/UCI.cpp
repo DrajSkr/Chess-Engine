@@ -135,38 +135,70 @@ void parse_position(const string &command)
     print_board();
 }
 
+extern int search_time_limit;
+
 //parse "go" commaand for UCI
 void parse_go(const string &command)
 {
-    //go to first word after go
-    int ind = 3;
-    
-    //depth of search
     int depth = -1;
-    //if depth word present
-    if (command.compare(ind, 5, "depth")==0)
-    {
-        //skip to number
-        ind+= 6;
+    int time_to_search = -1;
 
-        //covert depth to integer
+    size_t depth_pos = command.find("depth");
+    if (depth_pos != string::npos) {
+        int ind = depth_pos + 6;
         depth = 0;
-        while(command[ind]<='9'&&command[ind]>='0')
-        {
-            depth = depth*10 + (command[ind] - '0');
+        while(ind < command.size() && command[ind] >= '0' && command[ind] <= '9') {
+            depth = depth * 10 + (command[ind] - '0');
             ind++;
         }
-        //next word or end
-        ind++;
     }
-    //different time controls placeholder
-    else 
-        depth = 6;
+
+    size_t movetime_pos = command.find("movetime");
+    if (movetime_pos != string::npos) {
+        int ind = movetime_pos + 9;
+        time_to_search = 0;
+        while(ind < command.size() && command[ind] >= '0' && command[ind] <= '9') {
+            time_to_search = time_to_search * 10 + (command[ind] - '0');
+            ind++;
+        }
+    }
+
+    size_t wtime_pos = command.find("wtime");
+    size_t btime_pos = command.find("btime");
+    if (wtime_pos != string::npos && btime_pos != string::npos && time_to_search == -1) {
+        int wtime = 0;
+        int ind = wtime_pos + 6;
+        while(ind < command.size() && command[ind] >= '0' && command[ind] <= '9') {
+            wtime = wtime * 10 + (command[ind] - '0');
+            ind++;
+        }
+
+        int btime = 0;
+        ind = btime_pos + 6;
+        while(ind < command.size() && command[ind] >= '0' && command[ind] <= '9') {
+            btime = btime * 10 + (command[ind] - '0');
+            ind++;
+        }
+
+        if (side == white) {
+            time_to_search = wtime / 30;
+        } else {
+            time_to_search = btime / 30;
+        }
+    }
+
+    if (depth == -1) {
+        depth = 64; // Default to searching as deep as possible if no depth provided
+    }
+    
+    if (time_to_search != -1) {
+        search_time_limit = time_to_search;
+    } else {
+        search_time_limit = 4500; // default to 4.5s if no time control provided
+    }
 
     //search position
     search_position(depth);
-
-    //cout<<"depth: "<<depth<<"\n";
 }
 
 //main UCI loop to connect with GUI

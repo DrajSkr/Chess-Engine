@@ -31,8 +31,8 @@ endif
 # Compiler Flags
 CXXFLAGS := -Wall -Wextra -std=c++17 -O3 -flto $(OPTIMIZE)
 
-# Find all .cpp files in the current directory
-SRCS := $(wildcard *.cpp)
+# Find all .cpp files in the current directory except WsServer.cpp
+SRCS := $(filter-out WsServer.cpp, $(wildcard *.cpp))
 
 # Convert .cpp files to .o files
 OBJS := $(SRCS:.cpp=.o)
