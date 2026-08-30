@@ -274,6 +274,8 @@ body::before {
 .game-area {
   display: flex;
   align-items: stretch;
+  justify-content: center;
+  width: 100%;
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
