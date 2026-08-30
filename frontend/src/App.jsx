@@ -427,6 +427,11 @@ function App() {
           <span className={`status-dot ${isConnected ? 'online' : 'offline'}`} />
           <span>{isConnected ? 'Engine Connected' : 'Engine Offline'}</span>
         </div>
+        
+        {/* Footer */}
+        <div className="app-footer">
+          Made by DrajSkr
+        </div>
       </div>
     );
   }
