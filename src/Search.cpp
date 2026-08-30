@@ -31,8 +31,7 @@ void search_position(int max_depth)
 
     // Iterative Deepening loop
     for (int depth = 1; depth <= max_depth; depth++) {
-        // Run search
-        negamax(-50000, 50000, depth);
+        int score = negamax(-50000, 50000, depth);
         
         // If time ran out during the search, break out immediately
         // and DO NOT use the partial result (best_move from this aborted depth)
@@ -43,7 +42,7 @@ void search_position(int max_depth)
         // Successfully completed this depth
         current_best_move = best_move;
         
-        // cout<<"info depth "<<depth<<" score cp "<<score<<" nodes "<<search_nodes<<"\n";
+        cout<<"info depth "<<depth<<" score cp "<<score<<" nodes "<<search_nodes<<"\n";
     }
 
     // Restore the best move from the deepest COMPLETED search

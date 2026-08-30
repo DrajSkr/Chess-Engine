@@ -58,6 +58,21 @@ static inline SearchResult capture_search(int max_depth)
 
     best_move = current_best_move;
 
+    // Fallback: If best_move is still 0 (e.g. search aborted on depth 1), pick the first legal move
+    if (best_move == 0) {
+        MoveList fallback_list;
+        generate_moves(fallback_list);
+        for (int i = 0; i < fallback_list.index; i++) {
+            copy_board();
+            if (make_move(fallback_list.moves[i], all_moves)) {
+                take_back();
+                best_move = fallback_list.moves[i];
+                break;
+            }
+            take_back();
+        }
+    }
+
     // Score is from the side-to-move's perspective (negamax convention).
     // Convert to white's perspective for the eval bar.
     if (side == black)

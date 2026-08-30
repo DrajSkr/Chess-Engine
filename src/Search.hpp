@@ -162,8 +162,12 @@ static inline int negamax(int alpha, int beta, int depth)
     int tt_score = read_tt(depth, alpha, beta, &pv_move);
     if (tt_score != 100000) {
         // We can immediately return the cached score
-        if (ply == 0) best_move = pv_move;
-        return tt_score;
+        if (ply == 0 && pv_move != 0) {
+            best_move = pv_move;
+            return tt_score;
+        } else if (ply != 0) {
+            return tt_score;
+        }
     }
     
     //base case of recursion: use quiescence search instead of static evaluate

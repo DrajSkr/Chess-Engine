@@ -38,7 +38,7 @@ constexpr int knight_score[64] =
     -30,  0, 15, 20, 20, 15,  0,-30,
     -30,  5, 10, 15, 15, 10,  5,-30,
     -40,-20,  0,  5,  5,  0,-20,-40,
-    -50,-40,-30,-30,-30,-30,-40,-50
+    -80,-80,-80,-80,-80,-80,-80,-80 // Heavily penalize undeveloped knights
 };
 
 // bishop positional score
@@ -51,7 +51,7 @@ constexpr int bishop_score[64] =
     -10,  0, 10, 10, 10, 10,  0,-10,
     -10, 10, 10, 10, 10, 10, 10,-10,
     -10,  5,  0,  0,  0,  0,  5,-10,
-    -20,-10,-10,-10,-10,-10,-10,-20
+    -60,-60,-60,-60,-60,-60,-60,-60 // Heavily penalize undeveloped bishops
 };
 
 // rook positional score
