@@ -9,77 +9,88 @@ Evaluate
 #include "config.hpp"
 #include "Board.hpp"
 
-//material scores of white PKBRQK of white and black respectively
+//material scores of white PNBRQK of white and black respectively
 // black scores are negative since we are calculating score from white pov, and we will use negamax, so black's score is simply negative of this score
 constexpr int material_score[12] = {
-    100, 300, 350, 500, 1000, 10000, -100, -300, -350, -500, -1000,-10000
+    100, 300, 300, 500, 900, 10000, -100, -300, -300, -500, -900, -10000
 };
 
 // pawn positional score
 constexpr int pawn_score[64] = 
 {
-    90,  90,  90,  90,  90,  90,  90,  90,
-    30,  30,  30,  40,  40,  30,  30,  30,
-    20,  20,  20,  30,  30,  30,  20,  20,
-    10,  10,  10,  20,  20,  10,  10,  10,
-     5,   5,  10,  20,  20,   5,   5,   5,
-     0,   0,   0,   5,   5,   0,   0,   0,
-     0,   0,   0, -10, -10,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0
+      0,  0,  0,  0,  0,  0,  0,  0,
+     50, 50, 50, 50, 50, 50, 50, 50,
+     10, 10, 20, 30, 30, 20, 10, 10,
+      5,  5, 10, 25, 25, 10,  5,  5,
+      0,  0,  0, 20, 20,  0,  0,  0,
+      5, -5,-10,  0,  0,-10, -5,  5,
+      5, 10, 10,-20,-20, 10, 10,  5,
+      0,  0,  0,  0,  0,  0,  0,  0
 };
 
 // knight positional score
 constexpr int knight_score[64] = 
 {
-    -5,   0,   0,   0,   0,   0,   0,  -5,
-    -5,   0,   0,  10,  10,   0,   0,  -5,
-    -5,   5,  20,  20,  20,  20,   5,  -5,
-    -5,  10,  20,  30,  30,  20,  10,  -5,
-    -5,  10,  20,  30,  30,  20,  10,  -5,
-    -5,   5,  20,  10,  10,  20,   5,  -5,
-    -5,   0,   0,   0,   0,   0,   0,  -5,
-    -5, -10,   0,   0,   0,   0, -10,  -5
+    -50,-40,-30,-30,-30,-30,-40,-50,
+    -40,-20,  0,  0,  0,  0,-20,-40,
+    -30,  0, 10, 15, 15, 10,  0,-30,
+    -30,  5, 15, 20, 20, 15,  5,-30,
+    -30,  0, 15, 20, 20, 15,  0,-30,
+    -30,  5, 10, 15, 15, 10,  5,-30,
+    -40,-20,  0,  5,  5,  0,-20,-40,
+    -50,-40,-30,-30,-30,-30,-40,-50
 };
 
 // bishop positional score
 constexpr int bishop_score[64] = 
 {
-     0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,  10,  10,   0,   0,   0,
-     0,   0,  10,  20,  20,  10,   0,   0,
-     0,   0,  10,  20,  20,  10,   0,   0,
-     0,  10,   0,   0,   0,   0,  10,   0,
-     0,  30,   0,   0,   0,   0,  30,   0,
-     0,   0, -10,   0,   0, -10,   0,   0
-
+    -20,-10,-10,-10,-10,-10,-10,-20,
+    -10,  0,  0,  0,  0,  0,  0,-10,
+    -10,  0,  5, 10, 10,  5,  0,-10,
+    -10,  5,  5, 10, 10,  5,  5,-10,
+    -10,  0, 10, 10, 10, 10,  0,-10,
+    -10, 10, 10, 10, 10, 10, 10,-10,
+    -10,  5,  0,  0,  0,  0,  5,-10,
+    -20,-10,-10,-10,-10,-10,-10,-20
 };
 
 // rook positional score
 constexpr int rook_score[64] =
 {
-    50,  50,  50,  50,  50,  50,  50,  50,
-    50,  50,  50,  50,  50,  50,  50,  50,
-     0,   0,  10,  20,  20,  10,   0,   0,
-     0,   0,  10,  20,  20,  10,   0,   0,
-     0,   0,  10,  20,  20,  10,   0,   0,
-     0,   0,  10,  20,  20,  10,   0,   0,
-     0,   0,  10,  20,  20,  10,   0,   0,
-     0,   0,   0,  20,  20,   0,   0,   0
+      0,  0,  0,  0,  0,  0,  0,  0,
+      5, 10, 10, 10, 10, 10, 10,  5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+     -5,  0,  0,  0,  0,  0,  0, -5,
+      0,  0,  0,  5,  5,  0,  0,  0
+};
 
+// queen positional score
+constexpr int queen_score[64] =
+{
+    -20,-10,-10, -5, -5,-10,-10,-20,
+    -10,  0,  0,  0,  0,  0,  0,-10,
+    -10,  0,  5,  5,  5,  5,  0,-10,
+     -5,  0,  5,  5,  5,  5,  0, -5,
+      0,  0,  5,  5,  5,  5,  0, -5,
+    -10,  5,  5,  5,  5,  5,  0,-10,
+    -10,  0,  5,  0,  0,  0,  0,-10,
+    -20,-10,-10, -5, -5,-10,-10,-20
 };
 
 // king positional score
 constexpr int king_score[64] = 
 {
-     0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   5,   5,   5,   5,   0,   0,
-     0,   5,   5,  10,  10,   5,   5,   0,
-     0,   5,  10,  20,  20,  10,   5,   0,
-     0,   5,  10,  20,  20,  10,   5,   0,
-     0,   0,   5,  10,  10,   5,   0,   0,
-     0,   5,   5,  -5,  -5,   0,   5,   0,
-     0,   0,   5,   0, -15,   0,  10,   0
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -20,-30,-30,-40,-40,-30,-30,-20,
+    -10,-20,-20,-20,-20,-20,-20,-10,
+     20, 20,  0,  0,  0,  0, 20, 20,
+     20, 30, 10,  0,  0, 10, 30, 20
 };
 
 // mirror square for opposite side
@@ -125,6 +136,7 @@ static inline int evaluate()
                 case N: {score += knight_score[square]; break;}
                 case B: {score += bishop_score[square]; break;}
                 case R: {score += rook_score[square]; break;}
+                case Q: {score += queen_score[square]; break;}
                 case K: {score += king_score[square]; break;}
 
                 //evaluate black pieces, notice the minus sign in score
@@ -132,6 +144,7 @@ static inline int evaluate()
                 case n: {score -= knight_score[mirror_square[square]]; break;}
                 case b: {score -= bishop_score[mirror_square[square]]; break;}
                 case r: {score -= rook_score[mirror_square[square]]; break;}
+                case q: {score -= queen_score[mirror_square[square]]; break;}
                 case k: {score -= king_score[mirror_square[square]]; break;}
             }
             
