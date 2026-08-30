@@ -1,51 +1,43 @@
-/* ═══════════════════════════════════════════════════════════
-   Domino Chess Engine — Frontend Styles
-   Dark theme with glassmorphism, micro-animations,
-   and premium feel.
-   ═══════════════════════════════════════════════════════════ */
+/* Domino Chess Engine — Frontend Styles */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* ── CSS Custom Properties (Design Tokens) ────────────── */
+/* CSS Custom Properties */
 :root {
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #12121a;
-  --bg-card: rgba(20, 20, 35, 0.7);
-  --bg-glass: rgba(255, 255, 255, 0.04);
-  --bg-glass-hover: rgba(255, 255, 255, 0.08);
+  --bg-primary: #312e2b;
+  --bg-secondary: #262421;
+  --bg-card: #262421;
+  --bg-hover: #3d3935;
 
-  --text-primary: #e8e8f0;
-  --text-secondary: #8888a0;
-  --text-muted: #555570;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c3c3;
+  --text-muted: #8c8c8c;
 
-  --accent-primary: #6c5ce7;
-  --accent-secondary: #a29bfe;
-  --accent-glow: rgba(108, 92, 231, 0.3);
+  --accent-primary: #81b64c;
+  --accent-secondary: #96cc5c;
+  
+  --success: #81b64c;
+  --warning: #f1b34a;
+  --danger: #fa412d;
+  --info: #35a5ea;
 
-  --success: #00b894;
-  --warning: #fdcb6e;
-  --danger: #e17055;
-  --info: #74b9ff;
+  --border-subtle: #403d39;
+  --border-accent: #81b64c;
 
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-accent: rgba(108, 92, 231, 0.3);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
 
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 20px var(--accent-glow);
-
-  --transition-fast: 150ms ease;
-  --transition-normal: 250ms ease;
-  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 100ms ease-in-out;
+  --transition-normal: 200ms ease-in-out;
 }
 
-/* ── Global Reset ─────────────────────────────────────── */
+/* Global Reset */
 *, *::before, *::after {
   margin: 0;
   padding: 0;
@@ -66,28 +58,14 @@ body {
   overflow-x: hidden;
 }
 
-/* Subtle animated gradient background */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(108, 92, 231, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 100%, rgba(162, 155, 254, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(0, 184, 148, 0.03) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
+/* Removed animated background for cleaner aesthetic */
 
 #root {
   position: relative;
   z-index: 1;
 }
 
-/* ── App Container ────────────────────────────────────── */
+/* App Container */
 .app-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -98,7 +76,7 @@ body::before {
   align-items: center;
 }
 
-/* ── Header ───────────────────────────────────────────── */
+/* Header */
 .app-header {
   text-align: center;
   margin-bottom: 2rem;
@@ -118,10 +96,7 @@ body::before {
   font-size: 2.5rem;
   font-weight: 800;
   letter-spacing: -0.03em;
-  background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-secondary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-primary);
 }
 
 .app-title.small {
@@ -156,11 +131,11 @@ body::before {
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
   font-weight: 500;
-  background: var(--bg-glass);
+  background: var(--bg-hover);
   border: 1px solid var(--border-subtle);
 }
 
-/* ── Connection Status ────────────────────────────────── */
+/* Connection Status */
 .connection-status {
   margin-top: 2rem;
   display: flex;
@@ -192,7 +167,7 @@ body::before {
   50% { opacity: 0.5; }
 }
 
-/* ── Mode Selector ────────────────────────────────────── */
+/* Mode Selector */
 .mode-selector {
   display: flex;
   gap: 1.25rem;
@@ -206,7 +181,6 @@ body::before {
   width: 220px;
   padding: 2rem 1.5rem;
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   cursor: pointer;
@@ -223,15 +197,16 @@ body::before {
 }
 
 .mode-card:hover:not(.disabled) {
-  background: var(--bg-glass-hover);
+  background: var(--bg-hover);
   border-color: var(--border-accent);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .mode-card.active {
   border-color: var(--accent-primary);
-  box-shadow: var(--shadow-glow);
+  background: var(--bg-hover);
+  box-shadow: var(--shadow-sm);
 }
 
 .mode-card.disabled {
@@ -260,7 +235,7 @@ body::before {
   top: -8px;
   right: -8px;
   padding: 0.25rem 0.6rem;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  background: var(--accent-primary);
   color: white;
   font-size: 0.65rem;
   font-weight: 700;
@@ -270,7 +245,7 @@ body::before {
   box-shadow: var(--shadow-sm);
 }
 
-/* ── Game Area ────────────────────────────────────────── */
+/* Game Area */
 .game-area {
   display: flex;
   align-items: stretch;
@@ -293,7 +268,7 @@ body::before {
   margin: 0 auto;
 }
 
-/* ── Eval Bar ─────────────────────────────────────────── */
+/* Eval Bar */
 .eval-bar-container {
   display: flex;
   flex-direction: column;
@@ -332,7 +307,7 @@ body::before {
   white-space: nowrap;
 }
 
-/* ── Info Panel ───────────────────────────────────────── */
+/* Info Panel */
 .info-panel {
   width: 100%;
   max-width: 620px;
@@ -341,16 +316,16 @@ body::before {
   gap: 1rem;
 }
 
-/* ── Game Status ──────────────────────────────────────── */
+/* Game Status */
 .game-status {
   padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, rgba(108, 92, 231, 0.15), rgba(162, 155, 254, 0.1));
+  background: var(--bg-card);
   border: 1px solid var(--border-accent);
   border-radius: var(--radius-md);
   text-align: center;
   font-weight: 600;
   font-size: 1rem;
-  color: var(--accent-secondary);
+  color: var(--text-primary);
   animation: status-appear 300ms ease-out;
 }
 
@@ -359,7 +334,7 @@ body::before {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Thinking Indicator ───────────────────────────────── */
+/* Thinking Indicator */
 .thinking-indicator {
   display: flex;
   align-items: center;
@@ -387,7 +362,7 @@ body::before {
   to { transform: rotate(360deg); }
 }
 
-/* ── Controls ─────────────────────────────────────────── */
+/* Controls */
 .controls {
   display: flex;
   gap: 0.6rem;
@@ -410,22 +385,21 @@ body::before {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-primary), #5b4bd5);
+  background: var(--accent-primary);
   color: white;
   border-color: transparent;
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #7c6ef0, var(--accent-primary));
+  background: var(--accent-secondary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px var(--accent-glow);
 }
 
 .btn-secondary {
-  background: var(--bg-glass);
+  background: var(--bg-hover);
   color: var(--text-primary);
 }
 .btn-secondary:hover {
-  background: var(--bg-glass-hover);
+  background: var(--bg-hover);
   border-color: var(--border-accent);
 }
 
@@ -436,16 +410,15 @@ body::before {
 }
 .btn-ghost:hover {
   color: var(--text-primary);
-  background: var(--bg-glass);
+  background: var(--bg-hover);
 }
 
-/* ── Move History ─────────────────────────────────────── */
+/* Move History */
 .move-history {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 1rem;
-  backdrop-filter: blur(8px);
 }
 
 .move-history h3 {
@@ -489,7 +462,7 @@ body::before {
   margin-right: 0.15rem;
 }
 
-/* ── Turn Indicator ───────────────────────────────────── */
+/* Turn Indicator */
 .turn-indicator {
   display: flex;
   align-items: center;
@@ -511,7 +484,7 @@ body::before {
   background: #1a1a2e;
 }
 
-/* ── Scrollbar Styles ─────────────────────────────────── */
+/* Scrollbar Styles */
 ::-webkit-scrollbar {
   width: 4px;
 }
@@ -523,7 +496,7 @@ body::before {
   border-radius: 2px;
 }
 
-/* ── Responsive ───────────────────────────────────────── */
+/* Responsive */
 @media (max-width: 768px) {
   .app-container {
     padding: 1rem;
@@ -565,7 +538,7 @@ body::before {
   }
 }
 
-/* -- P2P Lobby Styles ------------------------------------- */
+/* P2P Lobby Styles */
 .p2p-lobby-overlay {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -586,14 +559,14 @@ body::before {
 }
 
 .p2p-lobby-content {
-  background: linear-gradient(145deg, rgba(30, 30, 45, 0.8), rgba(20, 20, 35, 0.95));
+  background: var(--bg-card);
   padding: 3rem 2.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   text-align: center;
   width: 90%;
   max-width: 420px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-lg);
   animation: slideUp 400ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -606,9 +579,7 @@ body::before {
   margin-bottom: 2rem;
   font-size: 1.6rem;
   font-weight: 700;
-  background: linear-gradient(to right, #e8e8f0, #a29bfe);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-primary);
   letter-spacing: -0.02em;
 }
 
@@ -649,8 +620,8 @@ body::before {
 
 .join-section input:focus {
   border-color: var(--accent-primary);
-  background: rgba(108, 92, 231, 0.1);
-  box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.15), inset 0 2px 4px rgba(0,0,0,0.2);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
 }
 
 .lobby-actions .btn {
@@ -667,10 +638,9 @@ body::before {
 .room-code-display {
   margin-top: 2rem;
   padding: 1.5rem;
-  background: rgba(108, 92, 231, 0.08);
+  background: var(--bg-hover);
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(108, 92, 231, 0.3);
-  animation: pulse-glow 2s infinite alternate;
+  border: 1px solid var(--border-accent);
 }
 
 .room-code-display p {
@@ -684,15 +654,9 @@ body::before {
   display: block;
   font-size: 2.5rem;
   letter-spacing: 0.25em;
-  color: #fff;
+  color: var(--text-primary);
   margin: 0;
   font-family: 'SF Mono', 'Cascadia Code', monospace;
-  text-shadow: 0 0 20px rgba(162, 155, 254, 0.4);
-}
-
-@keyframes pulse-glow {
-  from { box-shadow: 0 0 10px rgba(108, 92, 231, 0.1); }
-  to { box-shadow: 0 0 25px rgba(108, 92, 231, 0.3); }
 }
 
 /* Update thinking indicator for P2P */

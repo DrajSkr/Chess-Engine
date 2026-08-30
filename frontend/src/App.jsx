@@ -15,7 +15,7 @@ const MODES = {
 };
 
 function App() {
-  // ── Core State ──────────────────────────────────────────
+  // Core State
   const [game, setGame] = useState(new Chess());
   const gameRef = useRef(game);
   
@@ -38,10 +38,10 @@ function App() {
   const [moveTo, setMoveTo] = useState(null);
   const [showPromotionDialog, setShowPromotionDialog] = useState(false);
 
-  // ── WebSocket ─────────────────────────
+  // Engine Websocket
   const { isConnected, isThinking, lastMessage, sendMove, sendNewGame } = useEngineWebSocket();
 
-  // ── P2P WebRTC ────────────────────────
+  // P2P WebRTC
   const onP2PMove = useCallback((msg) => {
     if (msg.fen) {
       const newGame = new Chess();
@@ -84,7 +84,7 @@ function App() {
     }
   }, [gameMode, playerColor]);
 
-  // ── Process WebSocket messages from engine ──────────────
+  // Handle messages from engine
   useEffect(() => {
     if (!lastMessage) return;
 
@@ -133,7 +133,7 @@ function App() {
     }
   }, [lastMessage, gameMode]);
 
-  // ── Legal move highlights for selected piece ────────────
+  // Legal move highlights
   const legalMoveSquares = useMemo(() => {
     if (!selectedSquare) return {};
     const moves = game.moves({ square: selectedSquare, verbose: true });
@@ -154,7 +154,7 @@ function App() {
     return styles;
   }, [selectedSquare, game]);
 
-  // ── Compute final styles including check warning ──────────
+  // Square styling with check warning
   const finalSquareStyles = useMemo(() => {
     const styles = { ...legalMoveSquares };
 
@@ -180,7 +180,7 @@ function App() {
     return styles;
   }, [legalMoveSquares, game]);
 
-  // ── Convert react-chessboard square coords to engine move string ──
+  // Move string conversion
   const toMoveString = useCallback((from, to, promotion) => {
     let moveStr = from + to;
     if (promotion) moveStr += promotion;
@@ -266,7 +266,7 @@ function App() {
       return false;
   }, [gameMode, sendMove, sendP2PMove, toMoveString]);
 
-  // ── Handle piece drop ───────────────────────────────────
+  // Piece drop handler
   const onDrop = useCallback(
     (sourceSquare, targetSquare, piece) => {
       setSelectedSquare(null);
@@ -311,7 +311,7 @@ function App() {
     [moveFrom, moveTo, executeMove]
   );
 
-  // ── Handle square click (for click-to-move) ────────────
+  // Handle square click (for click-to-move)
   const onSquareClick = useCallback(
     (square) => {
       if (isThinking) return;
@@ -348,7 +348,7 @@ function App() {
     [selectedSquare, game, onDrop, isThinking, gameMode, isP2PConnected, boardOrientation]
   );
 
-  // ── New Game handler ────────────────────────────────────
+  // New Game handler
   const handleNewGame = useCallback(() => {
     const newGame = new Chess();
     setGame(newGame);
@@ -362,7 +362,7 @@ function App() {
     }
   }, [gameMode, sendNewGame]);
 
-  // ── Mode selection handler ──────────────────────────────
+  // Mode selection handler
   const handleModeSelect = useCallback(
     (mode) => {
       setGameMode(mode);
@@ -386,12 +386,12 @@ function App() {
     [sendNewGame, isInRoom, leaveRoom]
   );
 
-  // ── Flip Board handler ──────────────────────────────────
+  // Flip Board handler
   const handleFlipBoard = useCallback(() => {
     setBoardOrientation((prev) => (prev === 'white' ? 'black' : 'white'));
   }, []);
 
-  // ── Determine if pieces are draggable ───────────────────
+  // Determine if pieces are draggable
   const isDraggablePiece = useCallback(
     ({ piece }) => {
       if (isThinking) return false; // Don't allow moves while engine is thinking
@@ -414,7 +414,7 @@ function App() {
     [game, gameMode, isThinking, boardOrientation, isP2PConnected]
   );
 
-  // ── Render ──────────────────────────────────────────────
+  // Render
   if (showModeSelector) {
     return (
       <div className="app-container">
