@@ -777,16 +777,21 @@ int main()
     int opt_val = 1;
     setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt_val, sizeof(opt_val));
 
-    // Bind to port 8080
+    // Bind to port
+    int port = 8080;
+    if (const char* env_p = std::getenv("PORT")) {
+        port = std::stoi(env_p);
+    }
+
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(8080);
+    server_addr.sin_port = htons(port);
 
     if (::bind(server_sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR)
     {
-        std::cerr << "[WS] Failed to bind to port 8080." << std::endl;
+        std::cerr << "[WS] Failed to bind to port " << port << "." << std::endl;
         closesocket(server_sock);
         return 1;
     }
@@ -798,7 +803,7 @@ int main()
         return 1;
     }
 
-    std::cout << "[WS] Server listening on ws://localhost:8080" << std::endl;
+    std::cout << "[WS] Server listening on port " << port << std::endl;
     std::cout << "[WS] Waiting for connections..." << std::endl;
 
     // Accept loop — handle one client at a time (chess is a 1v1 game)
