@@ -32,7 +32,7 @@ void search_position(int max_depth)
     // Iterative Deepening loop
     for (int depth = 1; depth <= max_depth; depth++) {
         // Run search
-        int score = negamax(-50000, 50000, depth);
+        negamax(-50000, 50000, depth);
         
         // If time ran out during the search, break out immediately
         // and DO NOT use the partial result (best_move from this aborted depth)

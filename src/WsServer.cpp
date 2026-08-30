@@ -349,10 +349,14 @@ static bool ws_handshake(SOCKET client_sock)
     buf[r] = '\0';
     std::string request(buf);
 
+    // Only log if it's a real request
+    std::cout << "[WS] Client connected. Performing handshake..." << std::endl;
+
     // Handle Render Health Checks
     if (request.find("GET /healthz") != std::string::npos || request.find("GET / ") != std::string::npos)
     {
-        std::string ok = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK";
+        std::cout << "[WS] Health check OK." << std::endl;
+        std::string ok = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK";
         send(client_sock, ok.c_str(), (int)ok.size(), 0);
         return false; // Close connection after health check
     }
@@ -431,7 +435,6 @@ void init_engine()
 
 void handle_client(SOCKET client_sock)
 {
-    std::cout << "[WS] Client connected. Performing handshake..." << std::endl;
 
     if (!ws_handshake(client_sock))
     {
