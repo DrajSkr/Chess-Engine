@@ -11,10 +11,7 @@ Does NOT modify Search.cpp or Search.hpp.
 #ifndef SEARCHCAPTURE_HPP
 #define SEARCHCAPTURE_HPP
 
-#include "config.hpp"
-#include "Board.hpp"
-#include "MoveGenerator.hpp"
-#include "Search.hpp"
+#include "ChessEngine.hpp"
 #include <string>
 #include <sstream>
 

@@ -6,6 +6,7 @@ Move generator
 #ifndef MOVEGENERATOR_HPP
 #define MOVEGENERATOR_HPP
 
+#include "ChessEngine.hpp"
 #include "config.hpp"
 #include "PAT.hpp"
 #include "Board.hpp"

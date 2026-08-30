@@ -23,19 +23,33 @@ void ChessEngine::search_position(int max_depth)
     clear_heuristics();
     
     int current_best_move = 0;
+    int previous_score = 0;
+    int alpha = -50000;
+    int beta = 50000;
 
     // Iterative Deepening loop
     for (int depth = 1; depth <= max_depth; depth++) {
-        int score = negamax(-50000, 50000, depth);
+        int score = negamax(alpha, beta, depth);
+        
+        // Aspiration window failure: if score fell outside our narrow window, re-search with full window
+        if ((score <= alpha || score >= beta) && depth > 1) {
+            alpha = -50000;
+            beta = 50000;
+            score = negamax(alpha, beta, depth);
+        }
         
         // If time ran out during the search, break out immediately
-        // and DO NOT use the partial result (best_move from this aborted depth)
         if (time_stopped) {
             break;
         }
 
         // Successfully completed this depth
         current_best_move = best_move;
+        previous_score = score;
+        
+        // Set up narrow window for next depth
+        alpha = previous_score - 50;
+        beta = previous_score + 50;
         
         cout<<"info depth "<<depth<<" score cp "<<score<<" nodes "<<search_nodes<<"\n";
     }

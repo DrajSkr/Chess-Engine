@@ -43,6 +43,7 @@ void init_everything()
 {
     init_leapers_attacks();
     init_sliding_attacks();
+    init_zobrist();
     char_pieces['P'] = P; //0
     char_pieces['N'] = N; //1 and so on
     char_pieces['B'] = B;
@@ -91,14 +92,13 @@ int main()
     bool debug  = false;
     if (debug) 
     {
-        
-
+        ChessEngine engine;
         //testing evaluate
-        parse_FEN_string("R7/6P1/5Q2/2k5/8/8/7Q/4Q1K1 w KQkq - 0 1" );
-        print_board();
-        search_position(4);
+        engine.parse_FEN_string("R7/6P1/5Q2/2k5/8/8/7Q/4Q1K1 w KQkq - 0 1" );
+        engine.print_board();
+        engine.search_position(4);
         MoveList move_list;
-        generate_moves(move_list);
+        engine.generate_moves(move_list);
         move_list.print_move_list();
     }
     else

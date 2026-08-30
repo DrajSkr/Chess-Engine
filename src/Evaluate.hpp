@@ -6,6 +6,7 @@ Evaluate
 #ifndef EVALUATE_HPP
 #define EVALUATE_HPP
 
+#include "ChessEngine.hpp"
 #include "config.hpp"
 #include "Board.hpp"
 #include <algorithm>

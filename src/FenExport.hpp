@@ -9,7 +9,9 @@ This is a READ-ONLY utility — it does NOT modify any engine globals.
 #define FENEXPORT_HPP
 
 #include "config.hpp"
+#include "config.hpp"
 #include "Board.hpp"
+#include "ChessEngine.hpp"
 #include <string>
 #include <sstream>
 

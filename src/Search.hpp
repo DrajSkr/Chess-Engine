@@ -6,6 +6,7 @@ Search
 #ifndef SEARCH_HPP
 #define SEARCH_HPP
 
+#include "ChessEngine.hpp"
 #include "config.hpp"
 #include "Board.hpp"
 #include "Evaluate.hpp"
@@ -194,14 +195,28 @@ inline int ChessEngine::negamax(int alpha, int beta, int depth)
     if (depth<=0)
         return quiescence(alpha, beta);
 
+    // Reverse Futility Pruning (Static Null Move Pruning)
+    if (depth <= 2 && !king_in_check) {
+        int static_eval = evaluate();
+        int margin = depth * 200;
+        if (static_eval - margin >= beta) {
+            return static_eval; 
+        }
+    }
+
     // Null Move Pruning (NMP)
-    if (depth >= 3 && ply > 0 && !king_in_check)
+    // Zugzwang safety: only allow NMP if we have non-pawn material
+    U64 non_pawn_king = occupancies[side] & ~(bitboards[K] | bitboards[k] | bitboards[P] | bitboards[p]);
+    if (depth >= 3 && ply > 0 && !king_in_check && non_pawn_king)
     {
         // Make a null move (pass turn)
         int ep_copy = enpassant;
+        U64 hash_copy = hash_key;
+        
         side ^= 1;
         enpassant = no_square;
         ply++;
+        hash_key = generate_hash_key(); // MUST regenerate hash for TT accuracy
         
         // Search with reduced depth (R=2) and zero-width window
         int null_score = -negamax(-beta, -beta + 1, depth - 1 - 2);
@@ -210,6 +225,7 @@ inline int ChessEngine::negamax(int alpha, int beta, int depth)
         ply--;
         side ^= 1;
         enpassant = ep_copy;
+        hash_key = hash_copy;
         
         if (null_score >= beta)
             return beta;
