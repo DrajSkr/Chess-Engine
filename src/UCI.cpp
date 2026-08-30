@@ -8,16 +8,14 @@ UCI functions
 #include "Board.hpp"
 #include "Search.hpp"
 
+#include <chrono>
+
 //get time in milisecs
-int get_time_ms()
+long long get_time_ms()
 {
-    #ifdef _WIN32
-        return GetTickCount();
-    #else
-        struct timeval time_value;
-        gettimeofday(&time_value, NULL);
-        return time_value.tv_sec * 1000 + time_value.tv_usec / 1000;
-    #endif
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()
+    ).count();
 }
 
 //parse user or GUI move string for UCI purpose (a2a3, a7a8q)
@@ -135,13 +133,13 @@ void parse_position(const string &command)
     print_board();
 }
 
-extern int search_time_limit;
+extern long long search_time_limit;
 
 //parse "go" commaand for UCI
 void parse_go(const string &command)
 {
     int depth = -1;
-    int time_to_search = -1;
+    long long time_to_search = -1;
 
     size_t depth_pos = command.find("depth");
     if (depth_pos != string::npos) {

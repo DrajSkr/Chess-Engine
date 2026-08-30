@@ -20,8 +20,8 @@ extern int best_move;
 
 extern U64 search_nodes;
 extern bool time_stopped;
-extern int search_time_limit;
-extern int search_start_time;
+extern long long search_time_limit;
+extern long long search_start_time;
 
 
 // Score move for move ordering (MVV-LVA)

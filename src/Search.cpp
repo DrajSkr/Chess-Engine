@@ -14,8 +14,8 @@ Search
 int best_move;
 
 // Time management variables
-int search_time_limit = 4500; // default 4.5 seconds
-int search_start_time = 0;
+long long search_time_limit = 4500; // default 4.5 seconds
+long long search_start_time = 0;
 bool time_stopped = false;
 U64 search_nodes = 0;
 

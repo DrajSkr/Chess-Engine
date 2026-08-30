@@ -314,6 +314,9 @@ function App() {
   // ── Handle square click (for click-to-move) ────────────
   const onSquareClick = useCallback(
     (square) => {
+      if (isThinking) return;
+      if (game.isGameOver()) return;
+
       // If a piece is already selected, try to make a move
       if (selectedSquare) {
         const piece = game.get(selectedSquare);
@@ -334,12 +337,15 @@ function App() {
       // Select a piece (only if it belongs to the current player)
       const piece = game.get(square);
       if (piece && piece.color === game.turn()) {
+        if (gameMode === MODES.VS_BOT && piece.color !== 'w') return;
+        if (gameMode === MODES.P2P && (!isP2PConnected || piece.color !== boardOrientation[0])) return;
+        
         setSelectedSquare(square);
       } else {
         setSelectedSquare(null);
       }
     },
-    [selectedSquare, game, onDrop]
+    [selectedSquare, game, onDrop, isThinking, gameMode, isP2PConnected, boardOrientation]
   );
 
   // ── New Game handler ────────────────────────────────────
