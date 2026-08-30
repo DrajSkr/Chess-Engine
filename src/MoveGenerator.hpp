@@ -109,7 +109,7 @@ class MoveList
             #ifdef _WIN32
                 cout<<"    "<<unicode_pieces[decode_move_piece(moves[i])]<<"    ";
             #else 
-                cout<<"  "<<ascii_pieces[piece]<<"  ";
+                cout<<"  "<<ascii_pieces[decode_move_piece(moves[i])]<<"  ";
             #endif
             cout<<"    "<<bool(decode_move_capture(moves[i]))<<"    ";
             cout<<"    "<<bool(decode_move_double(moves[i]))<<"    ";
