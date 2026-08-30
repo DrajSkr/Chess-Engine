@@ -39,7 +39,7 @@ function App() {
   const [showPromotionDialog, setShowPromotionDialog] = useState(false);
 
   // Engine Websocket
-  const { isConnected, isThinking, lastMessage, sendMove, sendNewGame } = useEngineWebSocket();
+  const { isConnected, isThinking, addMessageListener, sendMove, sendNewGame } = useEngineWebSocket();
 
   // P2P WebRTC
   const onP2PMove = useCallback((msg) => {
@@ -86,52 +86,54 @@ function App() {
 
   // Handle messages from engine
   useEffect(() => {
-    if (!lastMessage) return;
-
-    // VS_BOT Logic
-    if (gameMode === MODES.VS_BOT) {
-      if (lastMessage.type === 'game_state') {
-        const newGame = new Chess(lastMessage.fen);
-        setGame(newGame);
-        setEvalScore(lastMessage.score || 0);
-        setMoveHistory([]);
-        setGameStatus('');
-      } else if (lastMessage.type === 'move_result') {
-        if (lastMessage.valid && lastMessage.fen) {
-          const newGame = new Chess(lastMessage.fen);
+    const handleMessage = (data) => {
+      // VS_BOT Logic
+      if (gameMode === MODES.VS_BOT) {
+        if (data.type === 'game_state') {
+          const newGame = new Chess(data.fen);
           setGame(newGame);
-          setEvalScore(lastMessage.score || 0);
+          setEvalScore(data.score || 0);
+          setMoveHistory([]);
+          setGameStatus('');
+        } else if (data.type === 'move_result') {
+          if (data.valid && data.fen) {
+            const newGame = new Chess(data.fen);
+            setGame(newGame);
+            setEvalScore(data.score || 0);
 
-          if (lastMessage.bestmove) {
-            setMoveHistory((prev) => [...prev, lastMessage.bestmove]);
-          }
+            if (data.bestmove) {
+              setMoveHistory((prev) => [...prev, data.bestmove]);
+            }
 
-          if (newGame.isCheckmate()) {
-            setGameStatus('Checkmate! Engine wins.');
-          } else if (newGame.isDraw()) {
-            setGameStatus('Draw!');
-          } else if (newGame.isStalemate()) {
-            setGameStatus('Stalemate!');
-          } else if (newGame.isCheck()) {
-            setGameStatus('Check!');
-          } else {
-            setGameStatus('');
+            if (newGame.isCheckmate()) {
+              setGameStatus('Checkmate! Engine wins.');
+            } else if (newGame.isDraw()) {
+              setGameStatus('Draw!');
+            } else if (newGame.isStalemate()) {
+              setGameStatus('Stalemate!');
+            } else if (newGame.isCheck()) {
+              setGameStatus('Check!');
+            } else {
+              setGameStatus('');
+            }
           }
+        } else if (data.type === 'game_over') {
+          if (data.fen) {
+            const newGame = new Chess(data.fen);
+            setGame(newGame);
+          }
+          const reason = data.reason === 'checkmate' ? 'Checkmate!' : 'Stalemate!';
+          setGameStatus(`Game Over — ${reason}`);
         }
-      } else if (lastMessage.type === 'game_over') {
-        if (lastMessage.fen) {
-          const newGame = new Chess(lastMessage.fen);
-          setGame(newGame);
-        }
-        const reason = lastMessage.reason === 'checkmate' ? 'Checkmate!' : 'Stalemate!';
-        setGameStatus(`Game Over — ${reason}`);
       }
-    }
 
-    if (lastMessage.type === 'error') {
-      console.error('[Engine Error]', lastMessage.message);
-    }
-  }, [lastMessage, gameMode]);
+      if (data.type === 'error') {
+        console.error('[Engine Error]', data.message);
+      }
+    };
+    
+    return addMessageListener(handleMessage);
+  }, [gameMode, addMessageListener]);
 
   // Legal move highlights
   const legalMoveSquares = useMemo(() => {

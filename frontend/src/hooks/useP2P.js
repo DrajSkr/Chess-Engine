@@ -9,7 +9,7 @@ const rtcConfig = {
 };
 
 export function useP2P({ onP2PMove, onOpponentLeft }) {
-  const { isConnected, lastMessage, sendCreateRoom, sendJoinRoom, sendSignal } = useEngineWebSocket();
+  const { isConnected, addMessageListener, sendCreateRoom, sendJoinRoom, sendSignal } = useEngineWebSocket();
   
   const [roomCode, setRoomCode] = useState(null);
   const [isInRoom, setIsInRoom] = useState(false);
@@ -18,6 +18,12 @@ export function useP2P({ onP2PMove, onOpponentLeft }) {
 
   const pcRef = useRef(null);
   const dcRef = useRef(null);
+  
+  // Create refs to ensure the message listener has the latest state without getting stale closures
+  const roomCodeRef = useRef(roomCode);
+  useEffect(() => {
+    roomCodeRef.current = roomCode;
+  }, [roomCode]);
 
   const cleanup = useCallback(() => {
     if (dcRef.current) {
@@ -80,21 +86,19 @@ export function useP2P({ onP2PMove, onOpponentLeft }) {
   };
 
   useEffect(() => {
-    if (!lastMessage) return;
-
-    const handleSignaling = async () => {
+    const handleSignaling = async (data) => {
       try {
-        if (lastMessage.type === 'room_created') {
-          setRoomCode(lastMessage.roomId);
-        } else if (lastMessage.type === 'p2p_start') {
+        if (data.type === 'room_created') {
+          setRoomCode(data.roomId);
+        } else if (data.type === 'p2p_start') {
           setIsInRoom(true);
-          setPlayerColor(lastMessage.color === 'w' ? 'white' : 'black');
-          const roomId = lastMessage.roomId || roomCode;
+          setPlayerColor(data.color === 'w' ? 'white' : 'black');
+          const roomId = data.roomId || roomCodeRef.current;
           setRoomCode(roomId);
 
           const pc = initPeerConnection(roomId);
           
-          if (lastMessage.color === 'w') {
+          if (data.color === 'w') {
             const dc = pc.createDataChannel('chess');
             dcRef.current = dc;
             setupDataChannel(dc);
@@ -103,21 +107,21 @@ export function useP2P({ onP2PMove, onOpponentLeft }) {
             await pc.setLocalDescription(offer);
             sendSignal(roomId, { signalType: 'offer', sdp: pc.localDescription });
           }
-        } else if (lastMessage.type === 'signal') {
+        } else if (data.type === 'signal') {
           const pc = pcRef.current;
           if (!pc) return;
 
-          if (lastMessage.signalType === 'offer') {
-            await pc.setRemoteDescription(new RTCSessionDescription(lastMessage.sdp));
+          if (data.signalType === 'offer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
-            sendSignal(lastMessage.roomId, { signalType: 'answer', sdp: pc.localDescription });
-          } else if (lastMessage.signalType === 'answer') {
-            await pc.setRemoteDescription(new RTCSessionDescription(lastMessage.sdp));
-          } else if (lastMessage.signalType === 'ice') {
-            await pc.addIceCandidate(new RTCIceCandidate(lastMessage.candidate));
+            sendSignal(data.roomId, { signalType: 'answer', sdp: pc.localDescription });
+          } else if (data.signalType === 'answer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+          } else if (data.signalType === 'ice') {
+            await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
           }
-        } else if (lastMessage.type === 'opponent_left') {
+        } else if (data.type === 'opponent_left') {
           onOpponentLeft && onOpponentLeft();
           cleanup();
         }
@@ -126,8 +130,8 @@ export function useP2P({ onP2PMove, onOpponentLeft }) {
       }
     };
 
-    handleSignaling();
-  }, [lastMessage, roomCode, initPeerConnection, sendSignal, onOpponentLeft, cleanup]);
+    return addMessageListener(handleSignaling);
+  }, [addMessageListener, initPeerConnection, sendSignal, onOpponentLeft, cleanup]);
 
   const sendP2PMove = useCallback((moveStr, fenStr) => {
     if (dcRef.current && dcRef.current.readyState === 'open') {
