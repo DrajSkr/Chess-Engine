@@ -702,3 +702,18 @@ body::before {
   border-color: rgba(253, 203, 110, 0.3);
 }
 
+.board-wrapper {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.app-footer {
+  margin-top: 2rem;
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  width: 100%;
+}

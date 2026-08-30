@@ -504,7 +504,6 @@ function App() {
               }}
               customDarkSquareStyle={{ backgroundColor: '#779952' }}
               customLightSquareStyle={{ backgroundColor: '#edeed1' }}
-              boardWidth={560}
               animationDuration={200}
             />
           )}
@@ -573,6 +572,11 @@ function App() {
             <span>{game.turn() === 'w' ? 'White' : 'Black'} to move</span>
           </div>
         )}
+      </div>
+      
+      {/* Footer */}
+      <div className="app-footer">
+        Made by DrajSkr
       </div>
     </div>
   );
