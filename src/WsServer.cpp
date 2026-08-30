@@ -352,19 +352,22 @@ static bool ws_handshake(SOCKET client_sock)
     // Only log if it's a real request
     std::cout << "[WS] Client connected. Performing handshake..." << std::endl;
 
-    // Handle Render Health Checks
-    if (request.find("GET /healthz") != std::string::npos || request.find("GET / ") != std::string::npos)
-    {
-        std::cout << "[WS] Health check OK." << std::endl;
-        std::string ok = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK";
-        send(client_sock, ok.c_str(), (int)ok.size(), 0);
-        return false; // Close connection after health check
-    }
-
     // Extract Sec-WebSocket-Key
     std::string key_header = "Sec-WebSocket-Key: ";
     size_t key_pos = request.find(key_header);
-    if (key_pos == std::string::npos) return false;
+    
+    // If no WebSocket key is found, treat it as a health check or regular HTTP request
+    if (key_pos == std::string::npos) 
+    {
+        if (request.find("GET /healthz") != std::string::npos || request.find("GET / ") != std::string::npos)
+        {
+            std::cout << "[WS] Health check OK." << std::endl;
+            std::string ok = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK";
+            send(client_sock, ok.c_str(), (int)ok.size(), 0);
+        }
+        return false; // Close connection
+    }
+
     size_t key_start = key_pos + key_header.size();
     size_t key_end = request.find("\r\n", key_start);
     std::string ws_key = request.substr(key_start, key_end - key_start);
