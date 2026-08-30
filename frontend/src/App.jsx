@@ -38,14 +38,6 @@ function App() {
   const [moveTo, setMoveTo] = useState(null);
   const [showPromotionDialog, setShowPromotionDialog] = useState(false);
 
-  // Responsive Board Sizing
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   // ── WebSocket ─────────────────────────
   const { isConnected, isThinking, lastMessage, sendMove, sendNewGame } = useEngineWebSocket();
 
@@ -517,7 +509,6 @@ function App() {
               }}
               customDarkSquareStyle={{ backgroundColor: '#779952' }}
               customLightSquareStyle={{ backgroundColor: '#edeed1' }}
-              boardWidth={Math.min(560, windowWidth - 32)}
               animationDuration={200}
             />
           )}
