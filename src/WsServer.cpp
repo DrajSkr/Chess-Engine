@@ -588,6 +588,10 @@ void handle_client(SOCKET client_sock)
             rooms_cs.unlock();
 #endif
         }
+        else if (msg_type == "ping")
+        {
+            ws_send_frame(client_sock, "{\"type\":\"pong\"}");
+        }
         else if (msg_type == "move")
         {
             std::string move_str = json_get_string(payload, "move");

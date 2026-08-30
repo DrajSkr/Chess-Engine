@@ -30,12 +30,21 @@ function connect() {
     ws.onopen = () => {
       console.log('[WS] Connected to engine server');
       notifyConnectionChange(true);
+      
+      // Start heartbeat to prevent idle disconnects
+      ws.pingInterval = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'ping' }));
+        }
+      }, 30000);
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('[WS] Received:', data);
+        if (data.type !== 'pong') {
+          console.log('[WS] Received:', data);
+        }
         
         if (data.type === 'move_result' || data.type === 'error' || data.type === 'game_over') {
           isThinkingGlobal = false;
@@ -50,6 +59,7 @@ function connect() {
 
     ws.onclose = () => {
       console.log('[WS] Disconnected from engine server');
+      if (ws.pingInterval) clearInterval(ws.pingInterval);
       notifyConnectionChange(false);
       wsInstance = null;
       reconnectTimer = setTimeout(connect, 2000);
