@@ -170,9 +170,7 @@ inline int ChessEngine::negamax(int alpha, int beta, int depth)
     int pv_move = 0;
     
     // Check Transposition Table
-    best_move = 0;
-    int tt_score = read_tt(alpha, beta, depth);
-    pv_move = best_move;
+    int tt_score = read_tt(alpha, beta, depth, &pv_move);
     if (tt_score != 100000) {
         // We can immediately return the cached score
         if (ply == 0 && pv_move != 0) {
@@ -292,8 +290,7 @@ inline int ChessEngine::negamax(int alpha, int beta, int depth)
 
             if (childscore>=beta)
             {
-                best_move = move_list.moves[i];
-                write_tt(beta, depth, hash_beta);
+                write_tt(beta, depth, hash_beta, move_list.moves[i]);
                 
                 // Quiet move caused a beta cutoff
                 if (!decode_move_capture(move_list.moves[i])) {
@@ -333,8 +330,7 @@ inline int ChessEngine::negamax(int alpha, int beta, int depth)
             return 0; 
     }
 
-    best_move = local_best_move;
-    write_tt(alpha, depth, hash_flag);
+    write_tt(alpha, depth, hash_flag, local_best_move);
     return alpha;
 }
 

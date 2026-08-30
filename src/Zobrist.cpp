@@ -68,14 +68,14 @@ U64 ChessEngine::generate_hash_key() {
     return final_key;
 }
 
-int ChessEngine::read_tt(int alpha, int beta, int depth) {
+int ChessEngine::read_tt(int alpha, int beta, int depth, int* pv_move) {
     if (tt_size == 0) return 100000;
     
     TTEntry *entry = &tt_table[hash_key % tt_size];
     
     if (entry->key == hash_key) {
         // We found a match, so extract the best move (useful for move sorting even if depth is lower)
-        best_move = entry->best_move;
+        if (pv_move) *pv_move = entry->best_move;
         
         // If the entry depth is sufficient, we can use the score
         if (entry->depth >= depth) {
@@ -100,7 +100,7 @@ int ChessEngine::read_tt(int alpha, int beta, int depth) {
     return 100000; // Value indicating failure to find a usable score
 }
 
-void ChessEngine::write_tt(int score, int depth, int hash_flag) {
+void ChessEngine::write_tt(int score, int depth, int hash_flag, int move) {
     if (tt_size == 0) return;
     
     TTEntry *entry = &tt_table[hash_key % tt_size];
@@ -114,5 +114,5 @@ void ChessEngine::write_tt(int score, int depth, int hash_flag) {
     entry->depth = depth;
     entry->flag = hash_flag;
     entry->score = score;
-    entry->best_move = best_move;
+    entry->best_move = move;
 }

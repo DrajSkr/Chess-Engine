@@ -63,8 +63,8 @@ public:
     inline void clear_heuristics();
     inline int score_move(int move, int pv_move);
     inline void sort_moves(struct MoveList& move_list, int pv_move);
-    int read_tt(int alpha, int beta, int depth);
-    void write_tt(int score, int depth, int hash_flag);
+    int read_tt(int alpha, int beta, int depth, int* pv_move);
+    void write_tt(int score, int depth, int hash_flag, int move);
     inline int quiescence(int alpha, int beta);
     inline int negamax(int alpha, int beta, int depth);
     void search_position(int depth);
