@@ -429,7 +429,7 @@ void init_engine()
     
     // Init TT
     init_zobrist();
-    init_tt(16); // 16 MB TT default
+    // init_tt(16); // 16 MB TT default
 }
 
 /*##########################
@@ -616,26 +616,29 @@ void handle_client(SOCKET client_sock)
             clear_tt();
             hash_key = generate_hash_key();
 
-            // 1. Parse and validate the player's move
-            int move = parse_move_string(move_str);
-            if (move == 0)
-            {
-                std::string err = json_error("Illegal move: " + move_str);
-                std::cout << "[WS] " << err << std::endl;
-                ws_send_frame(client_sock, err);
-                continue;
-            }
+            // 1 & 2. Parse and apply the move ONLY if fen_str was not provided.
+            // If fen_str was provided, the move is already applied in the FEN.
+            if (fen_str.empty()) {
+                int move = parse_move_string(move_str);
+                if (move == 0)
+                {
+                    std::string err = json_error("Illegal move: " + move_str);
+                    std::cout << "[WS] " << err << std::endl;
+                    ws_send_frame(client_sock, err);
+                    continue;
+                }
 
-            // 2. Make the player's move on the board
-            if (!make_move(move, all_moves))
-            {
-                std::string err = json_error("Illegal move (leaves king in check): " + move_str);
-                std::cout << "[WS] " << err << std::endl;
-                ws_send_frame(client_sock, err);
-                continue;
+                if (!make_move(move, all_moves))
+                {
+                    std::string err = json_error("Illegal move (leaves king in check): " + move_str);
+                    std::cout << "[WS] " << err << std::endl;
+                    ws_send_frame(client_sock, err);
+                    continue;
+                }
+                std::cout << "[WS] Player move applied: " << move_str << std::endl;
+            } else {
+                std::cout << "[WS] Using client FEN (move already applied): " << move_str << std::endl;
             }
-
-            std::cout << "[WS] Player move applied: " << move_str << std::endl;
 
             // 3. Check if game is over after player's move
             MoveList check_list;
