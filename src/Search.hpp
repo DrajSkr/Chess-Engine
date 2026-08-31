@@ -260,38 +260,43 @@ inline int ChessEngine::negamax(int alpha, int beta, int depth)
             legal_moves++;
             int childscore;
 
-            // Late Move Reductions (LMR)
-            // If we've searched a few moves (meaning they were likely best), and depth is high enough,
-            // and this is a quiet move (not a capture, not in check), search it shallower.
-            bool is_capture = decode_move_capture(move_list.moves[i]);
-            
-            // Note: king_in_check is for the CURRENT node, we should check if the new move gives check
-            // For simplicity, we just check if it's not a capture, not a promotion, and depth > 2
-            bool is_promotion = decode_move_promo_piece(move_list.moves[i]) != 0;
-            
-            if (moves_searched >= 4 && depth >= 3 && !king_in_check && !is_capture && !is_promotion) {
-                // Reduced depth search
-                childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-2);
-                
-                // If it fails high, do a full depth search
-                if (childscore > alpha) {
-                    childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-1);
-                    if (childscore > alpha && childscore < beta) {
-                        childscore = -1 * negamax(-1*beta, -1*alpha, depth-1);
-                    }
-                }
+            // Check for repetition or 50-move rule draw
+            if (is_repetition() || fifty >= 100) {
+                childscore = 0;
             } else {
-                // Principal Variation Search (PVS)
-                if (moves_searched == 0)
-                {
-                    childscore = -1 * negamax(-1*beta, -1*alpha, depth-1);
-                }
-                else
-                {
-                    childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-1);
-                    if (childscore > alpha && childscore < beta)
+                // Late Move Reductions (LMR)
+                // If we've searched a few moves (meaning they were likely best), and depth is high enough,
+                // and this is a quiet move (not a capture, not in check), search it shallower.
+                bool is_capture = decode_move_capture(move_list.moves[i]);
+                
+                // Note: king_in_check is for the CURRENT node, we should check if the new move gives check
+                // For simplicity, we just check if it's not a capture, not a promotion, and depth > 2
+                bool is_promotion = decode_move_promo_piece(move_list.moves[i]) != 0;
+                
+                if (moves_searched >= 4 && depth >= 3 && !king_in_check && !is_capture && !is_promotion) {
+                    // Reduced depth search
+                    childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-2);
+                    
+                    // If it fails high, do a full depth search
+                    if (childscore > alpha) {
+                        childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-1);
+                        if (childscore > alpha && childscore < beta) {
+                            childscore = -1 * negamax(-1*beta, -1*alpha, depth-1);
+                        }
+                    }
+                } else {
+                    // Principal Variation Search (PVS)
+                    if (moves_searched == 0)
                     {
                         childscore = -1 * negamax(-1*beta, -1*alpha, depth-1);
+                    }
+                    else
+                    {
+                        childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-1);
+                        if (childscore > alpha && childscore < beta)
+                        {
+                            childscore = -1 * negamax(-1*beta, -1*alpha, depth-1);
+                        }
                     }
                 }
             }

@@ -126,6 +126,9 @@ void parse_position(const string &command)
             if (move==0)
                 break;
             
+            //add current position to repetition history
+            uci_engine.repetition_table[uci_engine.repetition_index++] = uci_engine.hash_key;
+
             //make the move on the chess board
             uci_engine.make_move(move, all_moves);
         }

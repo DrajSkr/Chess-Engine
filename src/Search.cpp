@@ -31,6 +31,9 @@ void ChessEngine::search_position(int max_depth)
 #endif
         best_move = parse_move_string(book_move);
         std::cout << "info string book move found" << std::endl;
+        std::cout << "bestmove ";
+        print_move(best_move);
+        std::cout << "\n";
         return; // instant reply!
     }
 

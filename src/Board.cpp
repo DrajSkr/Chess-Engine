@@ -69,6 +69,7 @@ void ChessEngine::parse_FEN_string(const string &fen)
     side = 0;
     castle = 0;
     enpassant = no_square;
+    repetition_index = 0;
     int ind =0; //index in fen string
     for (int rank = 0; rank<8; rank++)
     {

@@ -25,6 +25,17 @@ public:
     std::vector<TTEntry> tt_table;
     int tt_size;
 
+    U64 repetition_table[1000];
+    int repetition_index;
+
+    inline bool is_repetition() {
+        for (int i = 0; i < repetition_index; i++) {
+            if (repetition_table[i] == hash_key)
+                return true;
+        }
+        return false;
+    }
+
     int best_move;
     U64 search_nodes;
     bool time_stopped;

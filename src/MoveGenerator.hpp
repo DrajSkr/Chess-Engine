@@ -520,14 +520,16 @@ inline void ChessEngine::generate_moves(MoveList &move_list)
     memcpy(bitboards_copy, bitboards, 96);\
     memcpy(occupancies_copy, occupancies, 24);\
     int side_copy = side, enpassant_copy = enpassant, castle_copy = castle, fifty_copy = fifty;\
-    U64 hash_key_copy = hash_key;
+    U64 hash_key_copy = hash_key; \
+    repetition_table[repetition_index++] = hash_key;
 
 // restore board state
 #define take_back()                                                       \
     memcpy(bitboards, bitboards_copy, 96);                                \
     memcpy(occupancies, occupancies_copy, 24);                            \
     side = side_copy;enpassant = enpassant_copy;castle = castle_copy;fifty = fifty_copy;                                                \
-    hash_key = hash_key_copy;
+    hash_key = hash_key_copy; \
+    repetition_index--;
 
 //castling rights update
 /*
