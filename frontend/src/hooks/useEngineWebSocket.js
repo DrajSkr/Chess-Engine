@@ -6,12 +6,18 @@ let wsInstance = null;
 let reconnectTimer = null;
 const listeners = new Set();
 let isThinkingGlobal = false;
+const thinkingListeners = new Set();
 let isConnectedGlobal = false;
 const connectionListeners = new Set();
 
 function notifyConnectionChange(status) {
   isConnectedGlobal = status;
   connectionListeners.forEach(l => l(status));
+}
+
+function notifyThinkingChange(status) {
+  isThinkingGlobal = status;
+  thinkingListeners.forEach(l => l(status));
 }
 
 function connect() {
@@ -47,7 +53,7 @@ function connect() {
         }
         
         if (data.type === 'move_result' || data.type === 'error' || data.type === 'game_over') {
-          isThinkingGlobal = false;
+          notifyThinkingChange(false);
         }
 
         // Notify all registered listeners
@@ -87,6 +93,12 @@ export function useEngineWebSocket() {
     return () => connectionListeners.delete(handler);
   }, []);
 
+  useEffect(() => {
+    const handler = (status) => setIsThinking(status);
+    thinkingListeners.add(handler);
+    return () => thinkingListeners.delete(handler);
+  }, []);
+
   const addMessageListener = useCallback((listener) => {
     listeners.add(listener);
     return () => listeners.delete(listener);
@@ -96,8 +108,7 @@ export function useEngineWebSocket() {
     if (wsInstance && wsInstance.readyState === WebSocket.OPEN) {
       const msg = JSON.stringify({ type: 'move', move: moveStr, fen: fenStr });
       console.log('[WS] Sending:', msg);
-      isThinkingGlobal = true;
-      setIsThinking(true);
+      notifyThinkingChange(true);
       wsInstance.send(msg);
       return true;
     }
@@ -109,8 +120,7 @@ export function useEngineWebSocket() {
     if (wsInstance && wsInstance.readyState === WebSocket.OPEN) {
       const msg = JSON.stringify({ type: 'new_game' });
       console.log('[WS] Sending:', msg);
-      isThinkingGlobal = false;
-      setIsThinking(false);
+      notifyThinkingChange(false);
       wsInstance.send(msg);
       return true;
     }

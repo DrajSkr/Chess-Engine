@@ -29,6 +29,14 @@ function App() {
   const [evalScore, setEvalScore] = useState(0);
   const [selectedSquare, setSelectedSquare] = useState(null);
   const [moveHistory, setMoveHistory] = useState([]);
+  const [initialFen, setInitialFen] = useState(new Chess().fen());
+  const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
+  const currentMoveIndexRef = useRef(currentMoveIndex);
+  
+  useEffect(() => {
+    currentMoveIndexRef.current = currentMoveIndex;
+  }, [currentMoveIndex]);
+
   const [gameStatus, setGameStatus] = useState('');
   const [showModeSelector, setShowModeSelector] = useState(true);
   const [joinCodeInput, setJoinCodeInput] = useState('');
@@ -49,7 +57,13 @@ function App() {
       setGame(newGame);
       
       // Update history using the move string
-      setMoveHistory((prev) => [...prev, msg.move]);
+      setMoveHistory((prev) => {
+        const idx = currentMoveIndexRef.current;
+        const newHist = prev.slice(0, idx + 1);
+        newHist.push({ san: msg.move, fen: msg.fen, from: '', to: '' }); 
+        setCurrentMoveIndex(newHist.length - 1);
+        return newHist;
+      });
 
       if (newGame.isCheckmate()) setGameStatus('Checkmate! You lose.');
       else if (newGame.isDraw() || newGame.isStalemate()) setGameStatus('Draw!');
@@ -80,7 +94,9 @@ function App() {
       setGameStatus(`Match started! You are ${playerColor}`);
       const newGame = new Chess();
       setGame(newGame);
+      setInitialFen(newGame.fen());
       setMoveHistory([]);
+      setCurrentMoveIndex(-1);
     }
   }, [gameMode, playerColor]);
 
@@ -92,8 +108,10 @@ function App() {
         if (data.type === 'game_state') {
           const newGame = new Chess(data.fen);
           setGame(newGame);
+          setInitialFen(data.fen);
           setEvalScore(data.score || 0);
           setMoveHistory([]);
+          setCurrentMoveIndex(-1);
           setGameStatus('');
         } else if (data.type === 'move_result') {
           if (data.valid && data.fen) {
@@ -101,8 +119,24 @@ function App() {
             setGame(newGame);
             setEvalScore(data.score || 0);
 
-            if (data.bestmove) {
-              setMoveHistory((prev) => [...prev, data.bestmove]);
+                        if (data.bestmove) {
+              const from = data.bestmove.substring(0, 2);
+              const to = data.bestmove.substring(2, 4);
+              const prom = data.bestmove[4];
+              const tempGame = new Chess(gameRef.current.fen());
+              let san = data.bestmove;
+              try {
+                const m = tempGame.move({ from, to, promotion: prom || 'q' });
+                if (m) san = m.san;
+              } catch(e) {}
+
+              setMoveHistory(prev => {
+                const idx = currentMoveIndexRef.current;
+                const newHist = prev.slice(0, idx + 1);
+                newHist.push({ san, fen: data.fen, from, to });
+                setCurrentMoveIndex(newHist.length - 1);
+                return newHist;
+              });
             }
 
             if (newGame.isCheckmate()) {
@@ -159,6 +193,15 @@ function App() {
   // Square styling with check warning
   const finalSquareStyles = useMemo(() => {
     const styles = { ...legalMoveSquares };
+    // Highlight last move
+    if (currentMoveIndex >= 0 && moveHistory[currentMoveIndex]) {
+      const lastMove = moveHistory[currentMoveIndex];
+      if (lastMove.from && lastMove.to) {
+        styles[lastMove.from] = { ...styles[lastMove.from], backgroundColor: 'rgba(255, 255, 0, 0.4)' };
+        styles[lastMove.to] = { ...styles[lastMove.to], backgroundColor: 'rgba(255, 255, 0, 0.4)' };
+      }
+    }
+
 
     if (game.isCheck() || game.isCheckmate()) {
       const turn = game.turn();
@@ -180,7 +223,7 @@ function App() {
       }
     }
     return styles;
-  }, [legalMoveSquares, game]);
+  }, [legalMoveSquares, game, currentMoveIndex, moveHistory]);
 
   // Move string conversion
   const toMoveString = useCallback((from, to, promotion) => {
@@ -205,8 +248,15 @@ function App() {
 
       if (!move) return false;
 
-      // Add to move history
-      setMoveHistory((prev) => [...prev, move.san]);
+            // Add to move history
+      const moveItem = { san: move.san, fen: gameCopy.fen(), from: move.from, to: move.to };
+      setMoveHistory(prev => {
+        const idx = currentMoveIndexRef.current;
+        const newHist = prev.slice(0, idx + 1);
+        newHist.push(moveItem);
+        setCurrentMoveIndex(newHist.length - 1);
+        return newHist;
+      });
 
       if (gameMode === MODES.VS_BOT) {
         // Update local board immediately with player's move
@@ -317,6 +367,7 @@ function App() {
   const onSquareClick = useCallback(
     (square) => {
       if (isThinking) return;
+      if (currentMoveIndex !== moveHistory.length - 1) return;
       if (game.isGameOver()) return;
 
       // If a piece is already selected, try to make a move
@@ -347,16 +398,29 @@ function App() {
         setSelectedSquare(null);
       }
     },
-    [selectedSquare, game, onDrop, isThinking, gameMode, isP2PConnected, boardOrientation]
+    [selectedSquare, game, onDrop, isThinking, gameMode, isP2PConnected, boardOrientation, currentMoveIndex, moveHistory]
   );
 
   // New Game handler
+  
+  const jumpToMove = useCallback((index) => {
+    setCurrentMoveIndex(index);
+    if (index === -1) {
+      setGame(new Chess(initialFen));
+    } else {
+      setGame(new Chess(moveHistory[index].fen));
+    }
+    setSelectedSquare(null);
+  }, [moveHistory, initialFen]);
+
   const handleNewGame = useCallback(() => {
     const newGame = new Chess();
     setGame(newGame);
+    setInitialFen(newGame.fen());
     setEvalScore(0);
     setSelectedSquare(null);
     setMoveHistory([]);
+    setCurrentMoveIndex(-1);
     setGameStatus('');
 
     if (gameMode === MODES.VS_BOT) {
@@ -372,9 +436,11 @@ function App() {
       // Reset game state for the new mode
       const newGame = new Chess();
       setGame(newGame);
-      setEvalScore(0);
-      setSelectedSquare(null);
-      setMoveHistory([]);
+    setInitialFen(newGame.fen());
+    setEvalScore(0);
+    setSelectedSquare(null);
+    setMoveHistory([]);
+    setCurrentMoveIndex(-1);
       setGameStatus('');
 
       if (mode === MODES.VS_BOT) {
@@ -396,7 +462,8 @@ function App() {
   // Determine if pieces are draggable
   const isDraggablePiece = useCallback(
     ({ piece }) => {
-      if (isThinking) return false; // Don't allow moves while engine is thinking
+      if (isThinking) return false;
+      if (currentMoveIndex !== moveHistory.length - 1) return false; // Don't allow moves while engine is thinking
       if (game.isGameOver()) return false;
 
       if (gameMode === MODES.VS_BOT) {
@@ -413,7 +480,7 @@ function App() {
       // LOCAL_PVP: allow dragging current turn's pieces
       return piece[0] === game.turn().charAt(0);
     },
-    [game, gameMode, isThinking, boardOrientation, isP2PConnected]
+    [game, gameMode, isThinking, boardOrientation, isP2PConnected, currentMoveIndex, moveHistory]
   );
 
   // Render
@@ -546,6 +613,49 @@ function App() {
         )}
 
         {/* Control buttons */}
+        
+        {/* Replay Controls */}
+        {moveHistory.length > 0 && (
+          <div className="replay-controls" style={{ display: 'flex', gap: '8px', marginBottom: '16px', justifyContent: 'center' }}>
+            <button 
+              className="btn btn-secondary" 
+              style={{ padding: '4px 8px', fontSize: '12px' }}
+              disabled={currentMoveIndex === -1}
+              onClick={() => jumpToMove(-1)}
+              title="Go to start"
+            >
+              &lt;&lt;
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              style={{ padding: '4px 12px', fontSize: '12px' }}
+              disabled={currentMoveIndex === -1}
+              onClick={() => jumpToMove(currentMoveIndex - 1)}
+              title="Previous move"
+            >
+              &lt;
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              style={{ padding: '4px 12px', fontSize: '12px' }}
+              disabled={currentMoveIndex === moveHistory.length - 1}
+              onClick={() => jumpToMove(currentMoveIndex + 1)}
+              title="Next move"
+            >
+              &gt;
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              style={{ padding: '4px 8px', fontSize: '12px' }}
+              disabled={currentMoveIndex === moveHistory.length - 1}
+              onClick={() => jumpToMove(moveHistory.length - 1)}
+              title="Go to end"
+            >
+              &gt;&gt;
+            </button>
+          </div>
+        )}
+
         <div className="controls">
           {gameMode !== MODES.P2P && (
             <button className="btn btn-primary" onClick={handleNewGame}>
@@ -569,9 +679,19 @@ function App() {
             <h3>Move History</h3>
             <div className="moves-list">
               {moveHistory.map((move, i) => (
-                <span key={i} className={`move-item ${i % 2 === 0 ? 'white-move' : 'black-move'}`}>
+                <span 
+                  key={i} 
+                  className={`move-item ${i % 2 === 0 ? 'white-move' : 'black-move'}`}
+                  onClick={() => jumpToMove(i)}
+                  style={{ 
+                    cursor: 'pointer', 
+                    backgroundColor: i === currentMoveIndex ? 'rgba(255,255,255,0.2)' : 'transparent', 
+                    borderRadius: '4px', 
+                    padding: '2px 4px' 
+                  }}
+                >
                   {i % 2 === 0 && <span className="move-number">{Math.floor(i / 2) + 1}.</span>}
-                  {move}
+                  {move.san}
                 </span>
               ))}
             </div>

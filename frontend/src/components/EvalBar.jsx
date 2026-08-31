@@ -24,17 +24,11 @@ export default function EvalBar({ score = 0, flipped = false }) {
 
   return (
     <div className="eval-bar-container" style={{ transform: flipped ? 'rotate(180deg)' : 'none' }}>
-      <div className="eval-bar">
+      <div className="eval-bar" style={{ '--white-fill': `${whitePercent}%`, '--black-fill': `${100 - whitePercent}%` }}>
         {/* Black section (top) */}
-        <div
-          className="eval-bar-black"
-          style={{ height: `${100 - whitePercent}%` }}
-        />
+        <div className="eval-bar-black" />
         {/* White section (bottom) */}
-        <div
-          className="eval-bar-white"
-          style={{ height: `${whitePercent}%` }}
-        />
+        <div className="eval-bar-white" />
       </div>
       <div className="eval-bar-score" style={{ transform: flipped ? 'rotate(180deg)' : 'none' }}>
         {displayScore}
