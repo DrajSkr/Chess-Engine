@@ -45,6 +45,15 @@ const THEMES = {
   cyber: { name: 'Cyber', light: '#e2e8f0', dark: '#8b5cf6' }
 };
 
+const PIECE_THEMES = {
+  cburnett: { name: 'Classic' },
+  merida: { name: 'Merida' },
+  alpha: { name: 'Alpha' },
+  fantasy: { name: 'Fantasy' }
+};
+
+const PIECES_LIST = ['wK', 'wQ', 'wR', 'wB', 'wN', 'wP', 'bK', 'bQ', 'bR', 'bB', 'bN', 'bP'];
+
 const MODES = {
   LOCAL_PVP: 'LOCAL_PVP',
   VS_BOT: 'VS_BOT',
@@ -64,6 +73,7 @@ function App() {
   const [gameMode, setGameMode] = useState(MODES.LOCAL_PVP);
   const [boardOrientation, setBoardOrientation] = useState('white');
   const [boardTheme, setBoardTheme] = useState('midnight');
+  const [pieceTheme, setPieceTheme] = useState('cburnett');
   const [evalScore, setEvalScore] = useState(0);
   const [selectedSquare, setSelectedSquare] = useState(null);
   const [moveHistory, setMoveHistory] = useState([]);
@@ -234,6 +244,23 @@ function App() {
   }, [selectedSquare, game]);
 
   // Square styling with check warning
+    const customPieces = useMemo(() => {
+    const pieceComponents = {};
+    PIECES_LIST.forEach(p => {
+      pieceComponents[p] = ({ squareWidth }) => (
+        <div style={{
+          width: squareWidth,
+          height: squareWidth,
+          backgroundImage: `url(/pieces/${pieceTheme}/${p}.svg)`,
+          backgroundSize: '100%',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center'
+        }} />
+      );
+    });
+    return pieceComponents;
+  }, [pieceTheme]);
+
   const finalSquareStyles = useMemo(() => {
     const styles = { ...legalMoveSquares };
     // Highlight last move
@@ -631,6 +658,7 @@ function App() {
               }}
               customDarkSquareStyle={{ backgroundColor: THEMES[boardTheme].dark }}
               customLightSquareStyle={{ backgroundColor: THEMES[boardTheme].light }}
+              customPieces={customPieces}
               animationDuration={200}
             />
           )}
@@ -712,6 +740,16 @@ function App() {
           <button className="btn btn-secondary" onClick={handleFlipBoard}>
             🔃 Flip Board
           </button>
+                    <select 
+            className="btn btn-secondary" 
+            value={pieceTheme} 
+            onChange={(e) => setPieceTheme(e.target.value)}
+            title="Change Piece Theme"
+          >
+            {Object.entries(PIECE_THEMES).map(([key, theme]) => (
+              <option key={key} value={key}>{theme.name} Pieces</option>
+            ))}
+          </select>
           <select 
             className="btn btn-secondary" 
             value={boardTheme} 
