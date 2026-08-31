@@ -8,6 +8,43 @@ import { useP2P } from './hooks/useP2P';
 import './App.css';
 
 // Game modes
+
+// Sound objects
+const sounds = {
+  move: new Audio('/sounds/move.ogg'),
+  capture: new Audio('/sounds/capture.ogg'),
+  check: new Audio('/sounds/check.ogg'),
+  gameEnd: new Audio('/sounds/genericnotify.ogg'),
+};
+
+const playSoundForMove = (san, isGameOver) => {
+  try {
+    if (isGameOver) {
+      sounds.gameEnd.currentTime = 0;
+      sounds.gameEnd.play().catch(() => {});
+    } else if (san.includes('+') || san.includes('#')) {
+      sounds.check.currentTime = 0;
+      sounds.check.play().catch(() => {});
+    } else if (san.includes('x')) {
+      sounds.capture.currentTime = 0;
+      sounds.capture.play().catch(() => {});
+    } else {
+      sounds.move.currentTime = 0;
+      sounds.move.play().catch(() => {});
+    }
+  } catch (e) {}
+};
+
+
+const THEMES = {
+  emerald: { name: 'Emerald', light: '#edeed1', dark: '#779952' },
+  ocean: { name: 'Ocean', light: '#dee3e6', dark: '#8ca2ad' },
+  midnight: { name: 'Midnight', light: '#d1d9e1', dark: '#5c7080' },
+  walnut: { name: 'Walnut', light: '#e4c49d', dark: '#8b5a2b' },
+  coral: { name: 'Coral', light: '#f2e3d5', dark: '#d88373' },
+  cyber: { name: 'Cyber', light: '#e2e8f0', dark: '#8b5cf6' }
+};
+
 const MODES = {
   LOCAL_PVP: 'LOCAL_PVP',
   VS_BOT: 'VS_BOT',
@@ -26,6 +63,7 @@ function App() {
 
   const [gameMode, setGameMode] = useState(MODES.LOCAL_PVP);
   const [boardOrientation, setBoardOrientation] = useState('white');
+  const [boardTheme, setBoardTheme] = useState('midnight');
   const [evalScore, setEvalScore] = useState(0);
   const [selectedSquare, setSelectedSquare] = useState(null);
   const [moveHistory, setMoveHistory] = useState([]);
@@ -63,10 +101,13 @@ function App() {
         return newHist;
       });
 
-      if (newGame.isCheckmate()) setGameStatus('Checkmate! You lose.');
+            if (newGame.isCheckmate()) setGameStatus('Checkmate! You lose.');
       else if (newGame.isDraw() || newGame.isStalemate()) setGameStatus('Draw!');
       else if (newGame.isCheck()) setGameStatus('Check!');
       else setGameStatus('');
+      
+      playSoundForMove(msg.move, newGame.isGameOver());
+
     }
   }, []);
 
@@ -131,8 +172,12 @@ function App() {
                   if (m) san = m.san;
                 } catch(e) {}
 
-                const newHist = [...prev, { san, fen: data.fen, from, to }];
+                                const newHist = [...prev, { san, fen: data.fen, from, to }];
                 setCurrentMoveIndex(newHist.length - 1);
+                
+                // Play sound
+                setTimeout(() => playSoundForMove(san, newGame.isGameOver()), 0);
+                
                 return newHist;
               });
             }
@@ -248,11 +293,14 @@ function App() {
 
             // Add to move history
       const moveItem = { san: move.san, fen: gameCopy.fen(), from: move.from, to: move.to };
-      setMoveHistory(prev => {
+            setMoveHistory(prev => {
         const idx = currentMoveIndexRef.current;
         const newHist = prev.slice(0, idx + 1);
         newHist.push(moveItem);
         setCurrentMoveIndex(newHist.length - 1);
+        
+        playSoundForMove(move.san, gameCopy.isGameOver());
+        
         return newHist;
       });
 
@@ -403,10 +451,11 @@ function App() {
   
   const jumpToMove = useCallback((index) => {
     setCurrentMoveIndex(index);
-    if (index === -1) {
+        if (index === -1) {
       setGame(new Chess(initialFen));
     } else {
       setGame(new Chess(moveHistory[index].fen));
+      playSoundForMove(moveHistory[index].san, false);
     }
     setSelectedSquare(null);
   }, [moveHistory, initialFen]);
@@ -580,8 +629,8 @@ function App() {
                 borderRadius: '8px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
               }}
-              customDarkSquareStyle={{ backgroundColor: '#779952' }}
-              customLightSquareStyle={{ backgroundColor: '#edeed1' }}
+              customDarkSquareStyle={{ backgroundColor: THEMES[boardTheme].dark }}
+              customLightSquareStyle={{ backgroundColor: THEMES[boardTheme].light }}
               animationDuration={200}
             />
           )}
@@ -663,6 +712,16 @@ function App() {
           <button className="btn btn-secondary" onClick={handleFlipBoard}>
             🔃 Flip Board
           </button>
+          <select 
+            className="btn btn-secondary" 
+            value={boardTheme} 
+            onChange={(e) => setBoardTheme(e.target.value)}
+            title="Change Board Theme"
+          >
+            {Object.entries(THEMES).map(([key, theme]) => (
+              <option key={key} value={key}>{theme.name}</option>
+            ))}
+          </select>
           <button className="btn btn-ghost" onClick={() => {
             if (isInRoom) leaveRoom();
             setShowModeSelector(true);
