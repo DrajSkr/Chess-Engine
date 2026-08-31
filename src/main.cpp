@@ -33,6 +33,9 @@ void print_bitboard(U64 bitboard)
 //UCI functions
 #include "UCI.hpp"
 
+#include <ctime>
+#include <cstdlib>
+
 /*##########################
 
 Initialize everything
@@ -41,6 +44,7 @@ Initialize everything
 
 void init_everything()
 {
+    srand(time(NULL));
     init_leapers_attacks();
     init_sliding_attacks();
     init_zobrist();

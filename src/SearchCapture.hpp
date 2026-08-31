@@ -16,10 +16,15 @@ class ChessEngine; // Stops Clangd preamble
 #include <string>
 #include <sstream>
 #include <vector>
-
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 #include "UCI.hpp"
 #include "MoveGenerator.hpp"
 #include "Search.hpp"
+#include "OpeningBook.hpp"
 
 // Captures the bestmove string from the engine's search output.
 // search_position() prints "bestmove e2e4\n" to cout.
@@ -35,6 +40,19 @@ inline SearchResult ChessEngine::capture_search(int max_depth)
     search_start_time = get_time_ms();
     time_stopped = false;
     search_nodes = 0;
+    std::string fen = export_fen();
+    std::string book_move = get_book_move(fen);
+    if (!book_move.empty()) {
+#ifdef _WIN32
+        Sleep(500);
+#else
+        usleep(500000);
+#endif
+        best_move = parse_move_string(book_move);
+        result.bestmove = book_move;
+        result.score = 0; // Book move score
+        return result;
+    }
     
     // Clear heuristics
     clear_heuristics();

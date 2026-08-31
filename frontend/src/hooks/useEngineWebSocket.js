@@ -116,9 +116,9 @@ export function useEngineWebSocket() {
     return false;
   }, []);
 
-  const sendNewGame = useCallback(() => {
+  const sendNewGame = useCallback((color = 'w') => {
     if (wsInstance && wsInstance.readyState === WebSocket.OPEN) {
-      const msg = JSON.stringify({ type: 'new_game' });
+      const msg = JSON.stringify({ type: 'new_game', color: color });
       console.log('[WS] Sending:', msg);
       notifyThinkingChange(false);
       wsInstance.send(msg);

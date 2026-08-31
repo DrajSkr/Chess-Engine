@@ -8,12 +8,32 @@ Search
 #include "config.hpp" // IWYU pragma: keep
 #include "ChessEngine.hpp"
 #include "UCI.hpp"
+#include "OpeningBook.hpp"
+#include "FenExport.hpp"
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 // No global variables; they are now members of ChessEngine
 
 //search position for best move
 void ChessEngine::search_position(int max_depth)
 {
+    std::string fen = export_fen();
+    std::string book_move = get_book_move(fen);
+    if (!book_move.empty()) {
+#ifdef _WIN32
+        Sleep(500);
+#else
+        usleep(500000);
+#endif
+        best_move = parse_move_string(book_move);
+        std::cout << "info string book move found" << std::endl;
+        return; // instant reply!
+    }
+
     // Start timing
     search_start_time = get_time_ms();
     time_stopped = false;

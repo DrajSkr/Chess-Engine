@@ -473,12 +473,38 @@ void handle_client(SOCKET client_sock)
 
         if (msg_type == "new_game")
         {
+            std::string player_color = "w";
+            if (payload.find("\"color\":\"b\"") != std::string::npos || payload.find("\"color\": \"b\"") != std::string::npos) {
+                player_color = "b";
+            }
             session_fen = start_position;
             engine.parse_FEN_string(session_fen);
             std::string fen = engine.export_fen();
             std::string response = json_game_state(fen, 0);
             std::cout << "[WS] New game. Sending: " << response << std::endl;
             ws_send_frame(client_sock, response);
+
+            if (player_color == "b") {
+                engine.ply = 0;
+                engine.clear_tt();
+                engine.hash_key = engine.generate_hash_key();
+                
+                std::cout << "[WS] Engine playing as White, starting search..." << std::endl;
+                SearchResult sr = engine.capture_search(SEARCH_DEPTH);
+                
+                if (!sr.bestmove.empty()) {
+                    int engine_move = engine.parse_move_string(sr.bestmove);
+                    if (engine_move != 0) {
+                        engine.make_move(engine_move, all_moves);
+                    }
+                }
+                
+                fen = engine.export_fen();
+                session_fen = fen;
+                response = json_move_result(fen, sr.bestmove, sr.score, true);
+                std::cout << "[WS] Sending first move: " << response << std::endl;
+                ws_send_frame(client_sock, response);
+            }
         }
         else if (msg_type == "create_room")
         {

@@ -463,7 +463,7 @@ function App() {
       // Select a piece (only if it belongs to the current player)
       const piece = game.get(square);
       if (piece && piece.color === game.turn()) {
-        if (gameMode === MODES.VS_BOT && piece.color !== 'w') return;
+        if (gameMode === MODES.VS_BOT && piece.color !== boardOrientation[0]) return;
         if (gameMode === MODES.P2P && (!isP2PConnected || piece.color !== boardOrientation[0])) return;
         
         setSelectedSquare(square);
@@ -498,15 +498,19 @@ function App() {
     setGameStatus('');
 
     if (gameMode === MODES.VS_BOT) {
-      sendNewGame();
+      sendNewGame(boardOrientation[0]);
     }
-  }, [gameMode, sendNewGame]);
+  }, [gameMode, sendNewGame, boardOrientation]);
 
   // Mode selection handler
   const handleModeSelect = useCallback(
-    (mode) => {
+    (mode, color = 'w') => {
       setGameMode(mode);
       setShowModeSelector(false);
+      
+      const newOrientation = mode === MODES.VS_BOT ? (color === 'b' ? 'black' : 'white') : 'white';
+      setBoardOrientation(newOrientation);
+
       // Reset game state for the new mode
       const newGame = new Chess();
       setGame(newGame);
@@ -518,7 +522,7 @@ function App() {
       setGameStatus('');
 
       if (mode === MODES.VS_BOT) {
-        sendNewGame();
+        sendNewGame(color);
       } else if (mode === MODES.P2P) {
         // Just show lobby, user will click create/join
       } else {
@@ -541,8 +545,8 @@ function App() {
       if (game.isGameOver()) return false;
 
       if (gameMode === MODES.VS_BOT) {
-        // Only allow dragging white pieces (player is white)
-        return piece[0] === 'w' && game.turn() === 'w';
+        // Only allow dragging pieces that match the player's chosen color
+        return piece[0] === boardOrientation[0] && game.turn() === boardOrientation[0];
       }
 
       if (gameMode === MODES.P2P) {
