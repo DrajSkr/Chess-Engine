@@ -58,9 +58,7 @@ function App() {
       
       // Update history using the move string
       setMoveHistory((prev) => {
-        const idx = currentMoveIndexRef.current;
-        const newHist = prev.slice(0, idx + 1);
-        newHist.push({ san: msg.move, fen: msg.fen, from: '', to: '' }); 
+        const newHist = [...prev, { san: msg.move, fen: msg.fen, from: '', to: '' }]; 
         setCurrentMoveIndex(newHist.length - 1);
         return newHist;
       });
@@ -123,17 +121,17 @@ function App() {
               const from = data.bestmove.substring(0, 2);
               const to = data.bestmove.substring(2, 4);
               const prom = data.bestmove[4];
-              const tempGame = new Chess(gameRef.current.fen());
-              let san = data.bestmove;
-              try {
-                const m = tempGame.move({ from, to, promotion: prom || 'q' });
-                if (m) san = m.san;
-              } catch(e) {}
 
               setMoveHistory(prev => {
-                const idx = currentMoveIndexRef.current;
-                const newHist = prev.slice(0, idx + 1);
-                newHist.push({ san, fen: data.fen, from, to });
+                const lastFen = prev.length > 0 ? prev[prev.length - 1].fen : initialFen;
+                const tempGame = new Chess(lastFen);
+                let san = data.bestmove;
+                try {
+                  const m = tempGame.move({ from, to, promotion: prom || 'q' });
+                  if (m) san = m.san;
+                } catch(e) {}
+
+                const newHist = [...prev, { san, fen: data.fen, from, to }];
                 setCurrentMoveIndex(newHist.length - 1);
                 return newHist;
               });
