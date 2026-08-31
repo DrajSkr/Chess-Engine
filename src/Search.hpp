@@ -257,6 +257,9 @@ inline int ChessEngine::negamax(int alpha, int beta, int depth)
 
         if (make_move(move_list.moves[i], all_moves))
         {            
+            // Push old hash key to repetition table
+            repetition_table[repetition_index++] = hash_key_copy;
+            
             legal_moves++;
             int childscore;
 
@@ -303,6 +306,10 @@ inline int ChessEngine::negamax(int alpha, int beta, int depth)
             
             moves_searched++;
             ply--;
+            
+            // Pop old hash key from repetition table
+            repetition_index--;
+            
             take_back();
 
             if (childscore>=beta)
