@@ -15,9 +15,11 @@ export function useP2P({ onP2PMove, onOpponentLeft }) {
   const [isInRoom, setIsInRoom] = useState(false);
   const [isP2PConnected, setIsP2PConnected] = useState(false);
   const [playerColor, setPlayerColor] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
 
   const pcRef = useRef(null);
   const dcRef = useRef(null);
+  const iceCandidateQueue = useRef([]);
   
   // Create refs to ensure the message listener has the latest state without getting stale closures
   const roomCodeRef = useRef(roomCode);
@@ -38,6 +40,7 @@ export function useP2P({ onP2PMove, onOpponentLeft }) {
     setIsInRoom(false);
     setRoomCode(null);
     setPlayerColor(null);
+    setErrorMsg(null);
   }, []);
 
   const initPeerConnection = useCallback((roomId) => {
@@ -113,17 +116,33 @@ export function useP2P({ onP2PMove, onOpponentLeft }) {
 
           if (data.signalType === 'offer') {
             await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+            while (iceCandidateQueue.current.length > 0) {
+              await pc.addIceCandidate(iceCandidateQueue.current.shift());
+            }
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             sendSignal(data.roomId, { signalType: 'answer', sdp: pc.localDescription });
           } else if (data.signalType === 'answer') {
             await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+            while (iceCandidateQueue.current.length > 0) {
+              await pc.addIceCandidate(iceCandidateQueue.current.shift());
+            }
           } else if (data.signalType === 'ice') {
-            await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+            const candidate = new RTCIceCandidate(data.candidate);
+            if (pc.remoteDescription) {
+              await pc.addIceCandidate(candidate);
+            } else {
+              iceCandidateQueue.current.push(candidate);
+            }
           }
         } else if (data.type === 'opponent_left') {
           onOpponentLeft && onOpponentLeft();
           cleanup();
+        } else if (data.type === 'error') {
+          if (data.message && (data.message.includes("Room") || data.message.includes("join"))) {
+            setErrorMsg(data.message);
+            setRoomCode(null); // Reset room code on join failure
+          }
         }
       } catch (err) {
         console.error('[WebRTC] Signaling error:', err);
@@ -142,10 +161,13 @@ export function useP2P({ onP2PMove, onOpponentLeft }) {
   }, []);
 
   const createRoom = useCallback(() => {
+    setErrorMsg(null);
     sendCreateRoom();
   }, [sendCreateRoom]);
 
   const joinRoom = useCallback((code) => {
+    if (!code) return;
+    setErrorMsg(null);
     setRoomCode(code);
     sendJoinRoom(code);
   }, [sendJoinRoom]);
@@ -160,6 +182,7 @@ export function useP2P({ onP2PMove, onOpponentLeft }) {
     isInRoom,
     roomCode,
     playerColor,
+    errorMsg,
     createRoom,
     joinRoom,
     leaveRoom,

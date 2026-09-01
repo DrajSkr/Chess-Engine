@@ -130,6 +130,7 @@ function App() {
     isInRoom,
     roomCode,
     playerColor,
+    errorMsg,
     createRoom,
     joinRoom,
     leaveRoom,
@@ -619,27 +620,39 @@ function App() {
             <div className="p2p-lobby-overlay">
               <div className="p2p-lobby-content">
                 <h2>Online Matchmaking</h2>
-                <div className="lobby-actions">
-                  <button className="btn btn-primary" onClick={createRoom}>
-                    Create Room
-                  </button>
-                  <div className="join-section">
-                    <input 
-                      type="text" 
-                      placeholder="Room Code" 
-                      value={joinCodeInput} 
-                      onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
-                      maxLength={6}
-                    />
-                    <button className="btn btn-secondary" onClick={() => joinRoom(joinCodeInput)}>
-                      Join Room
-                    </button>
+                {errorMsg && (
+                  <div className="error-message" style={{color: '#ff6b6b', background: 'rgba(255,0,0,0.1)', padding: '10px', borderRadius: '4px', marginBottom: '15px'}}>
+                    {errorMsg}
                   </div>
-                </div>
+                )}
+                
+                {!roomCode && (
+                  <div className="lobby-actions">
+                    <button className="btn btn-primary" onClick={createRoom}>
+                      Create Room
+                    </button>
+                    <div className="join-section">
+                      <input 
+                        type="text" 
+                        placeholder="Room Code" 
+                        value={joinCodeInput} 
+                        onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+                        maxLength={6}
+                      />
+                      <button className="btn btn-secondary" onClick={() => joinRoom(joinCodeInput.trim())}>
+                        Join Room
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
                 {roomCode && !isP2PConnected && (
                   <div className="room-code-display">
                     Your Room Code: <strong>{roomCode}</strong>
                     <p>Waiting for opponent...</p>
+                    <button className="btn btn-secondary" onClick={leaveRoom} style={{marginTop: '15px', padding: '8px 16px', fontSize: '0.9em'}}>
+                      Cancel
+                    </button>
                   </div>
                 )}
               </div>
