@@ -11,6 +11,17 @@ class ChessEngine; // Stops Clangd preamble
 #include "config.hpp"
 #include "Board.hpp" // IWYU pragma: keep
 #include <algorithm> // IWYU pragma: keep
+#include "PAT.hpp"
+
+// Pawn Structure Evaluation Constants
+constexpr int mg_passed_pawn_bonus[8] = {0, 5, 10, 20, 35, 60, 100, 0};
+constexpr int eg_passed_pawn_bonus[8] = {0, 10, 25, 50, 90, 140, 200, 0};
+
+constexpr int mg_isolated_pawn_penalty = 15;
+constexpr int eg_isolated_pawn_penalty = 20;
+
+constexpr int mg_protected_pawn_bonus = 10;
+constexpr int eg_protected_pawn_bonus = 10;
 
 // Piece values for game phase calculation (not evaluation)
 constexpr int game_phase_inc[12] = {
@@ -196,10 +207,23 @@ inline int ChessEngine::evaluate()
 
             switch(piece)
             {
-                case P: 
+                case P: {
                     mg_score += mg_pawn_table[square] + mg_value[P]; 
                     eg_score += eg_pawn_table[square] + eg_value[P]; 
+                    
+                    // Passed Pawn
+                    if ((bitboards[p] & passed_pawn_masks[white][square]) == 0) {
+                        int rel_rank = 7 - (square / 8);
+                        mg_score += mg_passed_pawn_bonus[rel_rank];
+                        eg_score += eg_passed_pawn_bonus[rel_rank];
+                    }
+                    // Isolated Pawn
+                    if ((bitboards[P] & isolated_pawn_masks[square]) == 0) {
+                        mg_score -= mg_isolated_pawn_penalty;
+                        eg_score -= eg_isolated_pawn_penalty;
+                    }
                     break;
+                }
                 case N: 
                     mg_score += mg_knight_table[square] + mg_value[N]; 
                     eg_score += eg_knight_table[square] + eg_value[N]; 
@@ -222,10 +246,23 @@ inline int ChessEngine::evaluate()
                     eg_score += eg_king_table[square]; 
                     break;
 
-                case p: 
+                case p: {
                     mg_score -= (mg_pawn_table[mirror_square[square]] + mg_value[p]); 
                     eg_score -= (eg_pawn_table[mirror_square[square]] + eg_value[p]); 
+                    
+                    // Passed Pawn
+                    if ((bitboards[P] & passed_pawn_masks[black][square]) == 0) {
+                        int rel_rank = square / 8;
+                        mg_score -= mg_passed_pawn_bonus[rel_rank];
+                        eg_score -= eg_passed_pawn_bonus[rel_rank];
+                    }
+                    // Isolated Pawn
+                    if ((bitboards[p] & isolated_pawn_masks[square]) == 0) {
+                        mg_score += mg_isolated_pawn_penalty; // penalty reduces their score, so we add it to our perspective
+                        eg_score += eg_isolated_pawn_penalty;
+                    }
                     break;
+                }
                 case n: 
                     mg_score -= (mg_knight_table[mirror_square[square]] + mg_value[n]); 
                     eg_score -= (eg_knight_table[mirror_square[square]] + eg_value[n]); 

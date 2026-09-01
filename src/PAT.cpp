@@ -15,6 +15,8 @@ U64 bishop_attacks[64][512];
 U64 rook_attacks[64][4096];
 U64 bishop_romasks[64]; //relevant occupancy masks
 U64 rook_romasks[64];
+U64 passed_pawn_masks[2][64];
+U64 isolated_pawn_masks[64];
 //function to generate pawn attacks
 U64 mask_pawn_attacks(int side, int square)
 {
@@ -208,6 +210,37 @@ void init_leapers_attacks()
         pawn_attacks[black][square] = mask_pawn_attacks(black, square);
         knight_attacks[square] = mask_knight_attacks(square);
         king_attacks[square]=mask_king_attacks(square);
+        
+        // initialize pawn structure masks
+        passed_pawn_masks[white][square] = 0ULL;
+        passed_pawn_masks[black][square] = 0ULL;
+        isolated_pawn_masks[square] = 0ULL;
+        
+        int sq_rank = square / 8;
+        int sq_file = square % 8;
+        
+        for (int s = 0; s < 64; s++)
+        {
+            int s_rank = s / 8;
+            int s_file = s % 8;
+            
+            // adjacent files (for isolated pawn)
+            if (abs(s_file - sq_file) == 1) {
+                set_bit(isolated_pawn_masks[square], s);
+            }
+            
+            // same or adjacent files (for passed pawn)
+            if (abs(s_file - sq_file) <= 1) {
+                // white moves "up" to smaller rank indices (rank 0 is 8th rank)
+                if (s_rank < sq_rank) {
+                    set_bit(passed_pawn_masks[white][square], s);
+                }
+                // black moves "down" to larger rank indices
+                if (s_rank > sq_rank) {
+                    set_bit(passed_pawn_masks[black][square], s);
+                }
+            }
+        }
     }
 }
 

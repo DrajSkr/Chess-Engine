@@ -18,6 +18,8 @@ extern U64 bishop_attacks[64][512];
 extern U64 rook_attacks[64][4096];
 extern U64 bishop_romasks[64]; //relevant occupancy masks
 extern U64 rook_romasks[64];
+extern U64 passed_pawn_masks[2][64];
+extern U64 isolated_pawn_masks[64];
 
 //function to generate pawn attacks
 U64 mask_pawn_attacks(int side, int square);
