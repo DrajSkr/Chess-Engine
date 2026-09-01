@@ -1,0 +1,31 @@
+# Past Tournament Reports (Domino Version 2 vs Stockfish 16.1)
+
+## 1. Test Match (10+0.1, Stockfish Skill 3 ~1500)
+- Result: Domino swept 2-0.
+- Note: Initial test to ensure the engine and cutechess were hooked up correctly.
+
+## 2. Bugged Match (10+0.1, Stockfish Skill 4 ~1700)
+- Result: 11 - 9 - 0 (Domino won +34.9 Elo)
+- Note: This was run *with* the protected pawn bonus. The massive bonus caused Domino to play very passively (turtle chess), dropping its estimated rating to ~1735.
+
+## 3. Fixed Match (10+0.1, Stockfish Skill 4 ~1700)
+- Result: 17 - 3 - 0 (Domino won +301 Elo)
+- Note: Ran after removing the protected pawn bonus. The engine played highly aggressively, estimating its rating at ~2000 Elo.
+
+## 4. Full Classical Match (60+0.5, Stockfish Skill 4 ~1700)
+- Result: 36 - 3 - 1 (Domino won +407 Elo)
+- Note: Ran at a much longer time control (1 minute + 0.5s increment). Domino performed exceptionally well, breaking an estimated ~2100 Elo.
+
+*Note: Since these past games were run before PGN logging was enabled, the move-by-move data for these specific games was not saved. Future games will be saved as PGNs.*
+
+## 5. Level 5 Match (60+0.5, Stockfish Skill 5 ~2000)
+- Result: 25 - 14 - 1 (Domino won +98 Elo)
+- Note: Domino firmly proved its ~2100 strength with a solid 63% win rate. Saved in level5.pgn.
+
+## 6. Level 6 Match (60+0.5, Stockfish Skill 6 ~2100)
+- Result: 19 - 15 - 6 (Domino won +34.9 Elo)
+- Note: Narrow victory, demonstrating it is slightly better than 2100 Elo. Saved in level6.pgn.
+
+## 7. Level 7 Match (10+0.1, Stockfish Skill 7 ~2300+)
+- Result: 4 - 13 - 3 (Domino performance -168 Elo)
+- Note: A tough match against a master-level opponent, but the 4 wins and 3 draws perfectly corroborated the ~2135 Elo mathematical rating. Saved in level7.pgn.

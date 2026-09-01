@@ -267,6 +267,13 @@ inline int ChessEngine::negamax(int alpha, int beta, int depth)
             if (is_repetition() || fifty >= 100) {
                 childscore = 0;
             } else {
+                // 7th Rank Extension
+                int extension = 0;
+                int move_piece = decode_move_piece(move_list.moves[i]);
+                int target_sq = decode_move_target(move_list.moves[i]);
+                if (move_piece == P && (target_sq / 8) == 1) extension = 1;
+                else if (move_piece == p && (target_sq / 8) == 6) extension = 1;
+
                 // Late Move Reductions (LMR)
                 // If we've searched a few moves (meaning they were likely best), and depth is high enough,
                 // and this is a quiet move (not a capture, not in check), search it shallower.
@@ -276,29 +283,29 @@ inline int ChessEngine::negamax(int alpha, int beta, int depth)
                 // For simplicity, we just check if it's not a capture, not a promotion, and depth > 2
                 bool is_promotion = decode_move_promo_piece(move_list.moves[i]) != 0;
                 
-                if (moves_searched >= 4 && depth >= 3 && !king_in_check && !is_capture && !is_promotion) {
+                if (moves_searched >= 4 && depth >= 3 && !king_in_check && !is_capture && !is_promotion && extension == 0) {
                     // Reduced depth search
                     childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-2);
                     
                     // If it fails high, do a full depth search
                     if (childscore > alpha) {
-                        childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-1);
+                        childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-1 + extension);
                         if (childscore > alpha && childscore < beta) {
-                            childscore = -1 * negamax(-1*beta, -1*alpha, depth-1);
+                            childscore = -1 * negamax(-1*beta, -1*alpha, depth-1 + extension);
                         }
                     }
                 } else {
                     // Principal Variation Search (PVS)
                     if (moves_searched == 0)
                     {
-                        childscore = -1 * negamax(-1*beta, -1*alpha, depth-1);
+                        childscore = -1 * negamax(-1*beta, -1*alpha, depth-1 + extension);
                     }
                     else
                     {
-                        childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-1);
+                        childscore = -1 * negamax(-1*alpha - 1, -1*alpha, depth-1 + extension);
                         if (childscore > alpha && childscore < beta)
                         {
-                            childscore = -1 * negamax(-1*beta, -1*alpha, depth-1);
+                            childscore = -1 * negamax(-1*beta, -1*alpha, depth-1 + extension);
                         }
                     }
                 }
