@@ -5,6 +5,16 @@ const rtcConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    }
   ],
 };
 
@@ -57,7 +67,10 @@ export function useP2P({ onP2PMove, onOpponentLeft }) {
       console.log('[WebRTC] Connection state:', pc.connectionState);
       if (pc.connectionState === 'connected') {
         setIsP2PConnected(true);
-      } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+      } else if (pc.connectionState === 'disconnected') {
+        setIsP2PConnected(false);
+        console.warn('[WebRTC] Temporarily disconnected, waiting for reconnect...');
+      } else if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
         setIsP2PConnected(false);
         onOpponentLeft && onOpponentLeft();
         cleanup();
