@@ -133,8 +133,6 @@ void parse_position(const string &command)
             uci_engine.make_move(move, all_moves);
         }
     }
-    //debugging purpose
-    uci_engine.print_board();
 }
 
 extern long long search_time_limit;

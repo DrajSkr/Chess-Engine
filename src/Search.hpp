@@ -109,34 +109,42 @@ inline int ChessEngine::quiescence(int alpha, int beta)
         }
     }
 
-    // Evaluate the position (stand pat score)
-    int evaluation = evaluate();
+    int king_square = ((side==white)? get_fsb(bitboards[K]) : get_fsb(bitboards[k]));
+    int king_in_check = is_square_attacked(king_square, (1-side));
 
-    // Fail-hard beta cutoff
-    if (evaluation >= beta)
-        return beta;
+    if (!king_in_check) {
+        // Evaluate the position (stand pat score)
+        int evaluation = evaluate();
 
-    // Update alpha if stand pat score is better
-    if (evaluation > alpha)
-        alpha = evaluation;
+        // Fail-hard beta cutoff
+        if (evaluation >= beta)
+            return beta;
+
+        // Update alpha if stand pat score is better
+        if (evaluation > alpha)
+            alpha = evaluation;
+    }
 
     MoveList move_list;
     generate_moves(move_list);
     sort_moves(move_list, 0);
 
-    // Iterate over all possible moves, but only evaluate captures
+    int legal_moves = 0;
+
+    // Iterate over all possible moves
     for (int i = 0; i < move_list.index; i++)
     {
-        // Skip quiet moves in Quiescence Search
-        if (!decode_move_capture(move_list.moves[i]))
+        // Skip quiet moves in Quiescence Search UNLESS in check
+        if (!king_in_check && !decode_move_capture(move_list.moves[i]))
             continue;
 
         copy_board();
         ply++;
 
-        // Make the capture move
+        // Make the move
         if (make_move(move_list.moves[i], all_moves))
         {
+            legal_moves++;
             // Recursively search the resulting position
             int score = -1 * quiescence(-1 * beta, -1 * alpha);
 
@@ -155,6 +163,11 @@ inline int ChessEngine::quiescence(int alpha, int beta)
         {
             ply--;
         }
+    }
+
+    // Check for checkmate in quiescence search
+    if (king_in_check && legal_moves == 0) {
+        return -49000 + ply;
     }
 
     return alpha;
