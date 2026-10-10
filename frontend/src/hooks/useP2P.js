@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useEngineWebSocket } from './useEngineWebSocket';
 
-const meteredUsername = import.meta.env.VITE_METERED_USERNAME || 'b180ac824bd5f8926db4aa83';
-const meteredCredential = import.meta.env.VITE_METERED_CREDENTIAL || 'AK1M/6i6nN1RK5TN';
+const meteredUsername = import.meta.env.VITE_METERED_USERNAME;
+const meteredCredential = import.meta.env.VITE_METERED_CREDENTIAL;
 
 const rtcConfig = {
   iceServers: [
