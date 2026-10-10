@@ -1,20 +1,34 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useEngineWebSocket } from './useEngineWebSocket';
 
+const meteredUsername = import.meta.env.VITE_METERED_USERNAME || 'b180ac824bd5f8926db4aa83';
+const meteredCredential = import.meta.env.VITE_METERED_CREDENTIAL || 'AK1M/6i6nN1RK5TN';
+
 const rtcConfig = {
   iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
     {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
+      urls: "stun:stun.relay.metered.ca:80",
     },
     {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    }
+      urls: "turn:global.relay.metered.ca:80",
+      username: meteredUsername,
+      credential: meteredCredential,
+    },
+    {
+      urls: "turn:global.relay.metered.ca:80?transport=tcp",
+      username: meteredUsername,
+      credential: meteredCredential,
+    },
+    {
+      urls: "turn:global.relay.metered.ca:443",
+      username: meteredUsername,
+      credential: meteredCredential,
+    },
+    {
+      urls: "turns:global.relay.metered.ca:443?transport=tcp",
+      username: meteredUsername,
+      credential: meteredCredential,
+    },
   ],
 };
 
